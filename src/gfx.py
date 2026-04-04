@@ -179,6 +179,7 @@ class GFX(QObject):
         self.ui.connect_gameloop_btn.setEnabled(True)
 
         self.graphics_buttons = [
+            self.ui.super_smooth_graphics_btn,
             self.ui.smooth_graphics_btn,
             self.ui.balanced_graphics_btn,
             self.ui.hd_graphics_btn,
@@ -252,6 +253,7 @@ class GFX(QObject):
 
     def graphics_buttons_func(self):
         buttons = [
+            self.ui.super_smooth_graphics_btn,
             self.ui.smooth_graphics_btn,
             self.ui.balanced_graphics_btn,
             self.ui.hd_graphics_btn,
@@ -292,6 +294,7 @@ class GFX(QObject):
 
     def gfx_buttons(self, enabled: bool):
         buttons = [
+            self.ui.super_smooth_graphics_btn,
             self.ui.smooth_graphics_btn,
             self.ui.balanced_graphics_btn,
             self.ui.hd_graphics_btn,

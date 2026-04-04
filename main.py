@@ -2,7 +2,7 @@ import ctypes
 import sys
 from src.ui_functions import Window, QtWidgets
 from src.update import UpdateWindow, CheckUpdateThread
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
@@ -134,6 +134,21 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(NITRO_STYLESHEET)
+
+    icon_path = "assets/icons/logo.ico"
+    if hasattr(sys, '_MEIPASS'):
+        import os
+        icon_path = os.path.join(sys._MEIPASS, 'assets', 'icons', 'logo.ico')
+    
+    app_icon = QtGui.QIcon(icon_path)
+    app.setWindowIcon(app_icon)
+    
+    # Force taskbar icon refresh for Windows
+    try:
+        myappid = 'nitrodz.nitrotools.gaming.1.0'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception:
+        pass
 
     check_updates_silently()
     sys.exit(app.exec_())

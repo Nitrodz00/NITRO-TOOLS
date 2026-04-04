@@ -835,12 +835,12 @@ class Game(Optimizer):
         """
         graphics_setting_hex = self.read_hex("BattleRenderQuality")
         graphics_setting_dict = {
-            b'\x00': "Super Smooth",
-            b'\x01': "Smooth",
-            b'\x02': "Balanced",
-            b'\x03': "HD",
-            b'\x04': "HDR",
-            b'\x05': "Ultra HD"
+            b'\x01': "Super Smooth",
+            b'\x02': "Smooth",
+            b'\x03': "Balanced",
+            b'\x04': "HD",
+            b'\x05': "HDR",
+            b'\x06': "Ultra HD"
         }
         return graphics_setting_dict.get(graphics_setting_hex, None)
 
@@ -943,11 +943,12 @@ class Game(Optimizer):
         Sets the graphics quality for different game modes.
         """
         graphics_setting_dict = {
-            "Smooth": b'\x01',
-            "Balanced": b'\x02',
-            "HD": b'\x03',
-            "HDR": b'\x04',
-            "Ultra HD": b'\x05'
+            "Super Smooth": b'\x01',
+            "Smooth": b'\x02',
+            "Balanced": b'\x03',
+            "HD": b'\x04',
+            "HDR": b'\x05',
+            "Ultra HD": b'\x06'
         }
 
         graphics_setting = graphics_setting_dict.get(quality, b'\x01')
