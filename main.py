@@ -12,79 +12,81 @@ ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
 NITRO_STYLESHEET = """
 QMainWindow, QWidget {
-    background-color: #0d0d0d;
-    color: #e0e0e0;
-    font-family: 'Agency FB', 'Segoe UI', Arial;
+    background-color: #090310;
+    color: #f2e6ff;
+    font-family: 'Segoe UI', Arial;
 }
 QLabel {
-    color: #e0e0e0;
+    color: #f2e6ff;
     background: transparent;
+    font-weight: bold;
 }
 QPushButton {
-    background-color: rgba(25, 25, 25, 0.85);
-    border: 2px solid #555;
-    border-radius: 6px;
-    color: #cc0000;
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(80, 0, 120, 0.8), stop:1 rgba(180, 0, 160, 0.8));
+    border: 2px solid #a600ff;
+    border-radius: 8px;
+    color: #ffffff;
     font-weight: bold;
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 13px;
+    padding: 6px 10px;
     min-height: 28px;
 }
 QPushButton:hover {
-    background-color: rgba(180, 0, 0, 0.25);
-    border: 2px solid #ff1744;
-    color: #ff5252;
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(120, 0, 180, 0.9), stop:1 rgba(220, 0, 190, 0.9));
+    border: 2px solid #ff00ff;
+    color: #ffffff;
 }
 QPushButton:checked, QPushButton:pressed {
-    background-color: rgba(180, 0, 0, 0.75);
-    border: 2px solid #ff1744;
+    background-color: #ff00cc;
+    border: 2px solid #ffffff;
     color: #ffffff;
 }
 QPushButton:disabled {
-    background-color: rgba(20, 20, 20, 0.5);
-    border: 2px solid #333;
-    color: #555;
+    background-color: rgba(30, 10, 40, 0.5);
+    border: 2px solid #4a1060;
+    color: #9955b3;
 }
 QComboBox {
-    background-color: #1a1a1a;
-    border: 1px solid #cc0000;
-    border-radius: 4px;
-    color: #e0e0e0;
+    background-color: #12051f;
+    border: 1px solid #ff00cc;
+    border-radius: 5px;
+    color: #ffffff;
     padding: 4px 8px;
     min-height: 28px;
 }
 QComboBox::drop-down {
     border: none;
-    background: #cc0000;
+    background: #a600ff;
     width: 20px;
 }
 QComboBox QAbstractItemView {
-    background-color: #1a1a1a;
-    border: 1px solid #cc0000;
-    color: #e0e0e0;
-    selection-background-color: #cc0000;
+    background-color: #12051f;
+    border: 1px solid #ff00cc;
+    color: #f2e6ff;
+    selection-background-color: #ff00cc;
 }
 QScrollBar:vertical {
-    background: #1a1a1a;
-    width: 8px;
-    border-radius: 4px;
+    background: #090310;
+    width: 10px;
+    border-radius: 5px;
 }
 QScrollBar::handle:vertical {
-    background: #cc0000;
-    border-radius: 4px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #a600ff, stop:1 #ff00cc);
+    border-radius: 5px;
 }
 QTextBrowser {
-    background-color: #1a1a1a;
-    border: 1px solid #333;
-    color: #e0e0e0;
+    background-color: #12051f;
+    border: 1px solid #a600ff;
+    color: #f2e6ff;
+    border-radius: 5px;
 }
 QMenu {
-    background-color: #1a1a1a;
-    border: 1px solid #cc0000;
-    color: #e0e0e0;
+    background-color: #12051f;
+    border: 1px solid #ff00cc;
+    color: #f2e6ff;
 }
 QMenu::item:selected {
-    background-color: #cc0000;
+    background-color: #ff00cc;
 }
 """
 
