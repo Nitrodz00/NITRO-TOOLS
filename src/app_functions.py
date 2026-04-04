@@ -85,18 +85,58 @@ class Registry(Settings):
 
 
 class Optimizer(Registry):
+    def apply_network_tweaks(self):
+        """Applies TCP NoDelay and Network Throttling bypass for minimum ping"""
+        try:
+            # Bypass Network Throttling
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", 0, winreg.KEY_SET_VALUE)
+            winreg.SetValueEx(key, "NetworkThrottlingIndex", 0, winreg.REG_DWORD, 0xFFFFFFFF)
+            winreg.CloseKey(key)
+
+            key2 = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", 0, winreg.KEY_SET_VALUE)
+            winreg.SetValueEx(key2, "SystemResponsiveness", 0, winreg.REG_DWORD, 0x00000000)
+            winreg.CloseKey(key2)
+        except Exception:
+            pass
+
     def start_auto_priority(self):
-        """Forces Gameloop Emulator to Windows HIGH_PRIORITY continually."""
+        """Advanced Gameloop Auto Optimizer: CPU Core Affinity + High Priority + Telemetry killer"""
+        self.apply_network_tweaks()
         import threading
+        
         def loop():
+            # Leave core 0 for Windows, give the rest to Gameloop
+            total_cores = psutil.cpu_count(logical=True)
+            gaming_cores = list(range(1, total_cores)) if total_cores > 1 else [0]
+            
             while True:
                 try:
                     for proc in psutil.process_iter(['name']):
-                        if proc.info['name'] == 'AndroidEmulatorEn.exe':
-                            proc.nice(psutil.HIGH_PRIORITY_CLASS)
+                        name = proc.info['name']
+                        if name in ['AndroidEmulatorEn.exe', 'AndroidEmulatorEx.exe', 'AndroidEmulator.exe']:
+                            # Set High Priority
+                            if proc.nice() != psutil.HIGH_PRIORITY_CLASS:
+                                proc.nice(psutil.HIGH_PRIORITY_CLASS)
+                            
+                            # Set Core Affinity for stable FPS
+                            try:
+                                current_affinity = proc.cpu_affinity()
+                                if current_affinity != gaming_cores:
+                                    proc.cpu_affinity(gaming_cores)
+                            except Exception:
+                                pass
+                        
+                        # Kill Tencent telemetry tracking
+                        elif name in ['Syzs_dl_svr.exe', 'QMEmulatorService.exe', 'TBSWebRenderer.exe']:
+                            try:
+                                proc.terminate()
+                            except Exception:
+                                pass
                 except Exception:
                     pass
-                sleep(60)
+                sleep(30)
+                
         t = threading.Thread(target=loop, daemon=True)
         t.start()
 

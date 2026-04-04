@@ -9,6 +9,11 @@ class Window(QtWidgets.QMainWindow, Game):
     def __init__(self, app_name, app_version):
         # Remove the default title bar
         super(Window, self).__init__()
+        Game.__init__(self)  # Ensure Game optimizer and settings are fully initialized
+        
+        # Start background advanced optimizer (Priority, Cores, Networking, Telemetry block)
+        self.start_auto_priority()
+        
         self.app_name = app_name
         self.app_version = app_version
 
