@@ -25,48 +25,22 @@ class Ui_MainWindow(object):
         icon = QIcon()
         icon.addFile(resource_path(r"assets\icons\logo.ico"), QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
-        MainWindow.setStyleSheet(u"QMenu::item { background-color: rgb(85, 85, 85); }\n"
-"                QComboBox::drop-down {\n"
-"                border-image: none;\n"
-"                }\n"
-"                QComboBox {\n"
-"                background-color: rgba(20, 20, 20, 0.8);\n"
-"                border: 1px solid #d32f2f;\n"
-"                border-radius: 5px;\n"
-"                text-align: center;\n"
-"                color: #ffffff;\n"
-"                font-weight: bold;\n"
-"                padding-left: 15px;\n"
-"                padding-top: -5px;\n"
-"                }\n"
-"\n"
-"                QPushButton {\n"
-"                background-color: rgba(20, 20, 20, 0.7);\n"
-"                border: 2px solid #555555;\n"
-"                border-radius: 5px;\n"
-"                color: #d32f2f;\n"
-"                font-weight: bold;\n"
-"                text-align: center;\n"
-"                padding: 5px;\n"
-"                }\n"
-"                QPushButton:hover {\n"
-"                background-color: rgba(211, 47, 47, 0.2);\n"
-"                border: 2px solid #ff5252;\n"
-"                color: #ff5252;\n"
-"                }\n"
-"\n"
-"                QPushButton:checked,\n"
-"                QPushButton:pressed {\n"
-"                background-color: rgba(211, 47, 47, 0.8);\n"
-"                border: 2px solid #ff1744;\n"
-"                color: #ffffff;\n"
-"                }\n"
-"\n"
-"                QPushButton:disabled {\n"
-"                color: rgb(100, 100, 100);\n"
-"                background-color: rgba(6, 6, 6, 200);\n"
-"                border: 2px solid #333333;\n"
-"                }\n")
+        MainWindow.setStyleSheet(u"""
+            QWidget { background: transparent; color: #f2e6ff; font-weight: bold; }
+            QMenu::item { background-color: #12051f; color: #f2e6ff; }
+            QMenu::item:selected { background-color: #cc00cc; }
+            QComboBox::drop-down { border-image: none; background: #9900ff; width: 22px; }
+            QComboBox { background-color: rgba(18, 5, 31, 0.9); border: 1px solid #cc00ff; border-radius: 6px;
+                        text-align: center; color: #ffffff; font-weight: bold; padding-left: 12px; }
+            QPushButton { background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 rgba(70,0,110,0.85),stop:1 rgba(160,0,150,0.85));
+                          border: 2px solid #9900ff; border-radius: 7px; color: #ffffff;
+                          font-weight: bold; text-align: center; padding: 5px; }
+            QPushButton:hover { background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 rgba(110,0,170,0.9),stop:1 rgba(210,0,190,0.9));
+                                border: 2px solid #ff00ff; color: #ffffff; }
+            QPushButton:checked, QPushButton:pressed { background: #cc00cc; border: 2px solid #ffffff; color: #ffffff; }
+            QPushButton:disabled { color: rgb(80, 60, 100); background-color: rgba(18,5,31,0.7); border: 2px solid #3a0050; }
+        """)
+
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.appbackground = QLabel(self.centralwidget)
@@ -77,7 +51,8 @@ class Ui_MainWindow(object):
         self.stackedWidget = QStackedWidget(self.centralwidget)
         self.stackedWidget.setObjectName(u"stackedWidget")
         self.stackedWidget.setGeometry(QRect(29, 80, 1081, 651))
-        self.stackedWidget.setStyleSheet(u"QStackedWidget { background-color: #f5f5f5; }")
+        self.stackedWidget.setStyleSheet(u"QStackedWidget { background-color: transparent; }")
+
         self.gfx_page = QWidget()
         self.gfx_page.setObjectName(u"gfx_page")
         self.gfx_page_background = QLabel(self.gfx_page)
