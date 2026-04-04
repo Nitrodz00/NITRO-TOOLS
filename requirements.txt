@@ -1,0 +1,11 @@
+adbutils==1.2.9
+GPUtil
+ping3
+psutil
+pypiwin32
+PyQt5
+pywin32
+requests
+WMI
+winshell
+xmltodict

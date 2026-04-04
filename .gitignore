@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Distribution / packaging
+dist/
+build/
+*.spec
+*.egg-info/
+
+# Logs
+*.log
+error.log
+
+# PyInstaller output (keep spec for reference)
+dist/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Temp scripts (dev only)
+apply_final_tweaks.py
+change_icon.py
+modify_ui.py
+strip_mk.py
+test_gui.py
