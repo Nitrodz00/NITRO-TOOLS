@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Single-file release build: pyinstaller NITROTOOLS_RELEASE.spec
-# Optional: set PYINSTALLER_EXE_NAME (e.g. NITROTOOLS_PUBG_MOBILE_v2.1.0) for CI/local builds
+# Optional: set PYINSTALLER_EXE_NAME (e.g. NITROTOOLS_PUBG_MOBILE_v2.1.1) for CI/local builds
 import os
 from PyInstaller.utils.hooks import collect_all
 
-_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v2.1.0")
+_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v2.1.1")
 
 datas = [('assets', 'assets')]
 binaries = []
@@ -22,6 +22,8 @@ hiddenimports = [
     'requests',
     'winshell',
     'src.ui_images.resources_rc',
+    'PIL',
+    'PIL.Image',
 ]
 
 adb_ret = collect_all('adbutils')
@@ -43,7 +45,6 @@ a = Analysis(
         'numpy',
         'pandas',
         'scipy',
-        'PIL',
         'tkinter',
         'pytest',
     ],

@@ -1,4 +1,5 @@
 adbutils==1.2.9
+Pillow
 GPUtil
 ping3
 psutil
