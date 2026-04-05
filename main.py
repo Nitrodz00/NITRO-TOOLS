@@ -1,12 +1,17 @@
 import ctypes
 import sys
+
+# PyInstaller onefile: adbutils imports pkg_resources before graph analysis sees it — force bundle
+import pkg_resources  # noqa: F401
+import setuptools  # noqa: F401
+
 from src.ui_functions import Window, QtWidgets
 from src.update import UpdateWindow, CheckUpdateThread
 from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.1.2"
+APP_VERSION = "v2.1.3"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 

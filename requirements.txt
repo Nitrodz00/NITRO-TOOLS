@@ -1,5 +1,6 @@
 adbutils==1.2.9
-setuptools
+# adbutils uses pkg_resources; setuptools 82+ drops the module — pin below 82
+setuptools>=65.0,<82
 Pillow
 GPUtil
 ping3
