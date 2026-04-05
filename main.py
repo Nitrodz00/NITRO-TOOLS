@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.1.4"
+APP_VERSION = "v2.1.5"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -73,29 +73,33 @@ QFrame#MonitorFrame {
 
 #appname_label {
     color: #ffffff;
-    font-size: 36pt;
+    font-size: 18pt;
     font-weight: 900;
-    letter-spacing: 5px;
+    letter-spacing: 2px;
     background: transparent;
 }
 
-/* High-Performance Neon Buttons */
+/* Header Text Labels Padding */
+QLabel#fps_label, QLabel#cpu_label, QLabel#gpu_label, QLabel#ram_label {
+    padding-bottom: 2px;
+}
+
+/* High-Performance Modern Buttons - Harmonious Palette */
 QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
-        stop:0 #6a11cb, stop:1 #2575fc);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+        stop:0 #5c27fe, stop:1 #c165ff);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
     color: #ffffff;
-    font-weight: 900;
-    font-size: 13pt;
-    padding: 12px;
+    font-weight: 700;
+    font-size: 11pt;
+    padding: 8px;
 }
 
 QPushButton:hover {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
-        stop:0 #8e2de2, stop:1 #4a00e0);
-    border: 1px solid #00ffca;
-    box-shadow: 0 0 15px rgba(0, 255, 202, 0.5);
+        stop:0 #4a1edb, stop:1 #af4dff);
+    border: 1px solid #00f0ff;
 }
 
 QPushButton:checked {

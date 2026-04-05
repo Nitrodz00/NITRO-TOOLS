@@ -105,8 +105,8 @@ class Window(QtWidgets.QMainWindow, Game):
         # Move Monitor to Top-Right Header with elegant transparent style
         self.monitor_frame = QtWidgets.QFrame(self.ui.centralwidget)
         self.monitor_frame.setObjectName("MonitorFrame")
-        self.monitor_frame.setGeometry(QtCore.QRect(680, 8, 480, 40))
-        self.monitor_frame.setStyleSheet("background: transparent; border: none;")
+        self.monitor_frame.setGeometry(QtCore.QRect(600, 10, 500, 45))
+        self.monitor_frame.setStyleSheet("background: rgba(30, 0, 60, 0.4); border-radius: 8px;")
         
         layout = QtWidgets.QHBoxLayout(self.monitor_frame)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -139,14 +139,14 @@ class Window(QtWidgets.QMainWindow, Game):
     def _fix_ui_layouts(self):
         """Fix hardcoded UI overlaps from the .ui file."""
         # Fix Graphics row overlap
-        self.ui.layoutWidget.setGeometry(QtCore.QRect(10, 50, 1050, 45))
-        # Fix Framerate row overlap
-        self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 60, 1050, 45))
+        self.ui.layoutWidget.setGeometry(QtCore.QRect(15, 60, 1050, 45))
+        # Fix Framerate row overlap (Increased gap between rows)
+        self.ui.layoutWidget1.setGeometry(QtCore.QRect(15, 115, 1050, 45))
         # Fix Sidebar position and style
-        self.ui.PagesFrame.setGeometry(QtCore.QRect(1142, 60, 165, 670))
-        self.ui.gfx_button.setGeometry(QtCore.QRect(5, 10, 155, 60))
-        self.ui.other_button.setGeometry(QtCore.QRect(5, 80, 155, 60))
-        self.ui.about_button.setGeometry(QtCore.QRect(5, 590, 155, 60))
+        self.ui.PagesFrame.setGeometry(QtCore.QRect(1120, 80, 180, 640))
+        self.ui.gfx_button.setGeometry(QtCore.QRect(5, 10, 170, 70))
+        self.ui.other_button.setGeometry(QtCore.QRect(5, 90, 170, 70))
+        self.ui.about_button.setGeometry(QtCore.QRect(5, 560, 170, 70))
 
         # ui.py sets PagesFrame QPushButton:checked { border-image: menu_checked.png } — causes green/yellow edge artifact
         self.ui.PagesFrame.setStyleSheet("")
