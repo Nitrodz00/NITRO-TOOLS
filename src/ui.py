@@ -25,21 +25,7 @@ class Ui_MainWindow(object):
         icon = QIcon()
         icon.addFile(resource_path(r"assets\icons\logo.ico"), QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
-        MainWindow.setStyleSheet(u"""
-            QWidget { background: transparent; color: #f2e6ff; font-weight: bold; }
-            QMenu::item { background-color: #12051f; color: #f2e6ff; }
-            QMenu::item:selected { background-color: #cc00cc; }
-            QComboBox::drop-down { border-image: none; background: #9900ff; width: 22px; }
-            QComboBox { background-color: rgba(18, 5, 31, 0.9); border: 1px solid #cc00ff; border-radius: 6px;
-                        text-align: center; color: #ffffff; font-weight: bold; padding-left: 12px; }
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 rgba(70,0,110,0.85),stop:1 rgba(160,0,150,0.85));
-                          border: 2px solid #9900ff; border-radius: 7px; color: #ffffff;
-                          font-weight: bold; text-align: center; padding: 5px; }
-            QPushButton:hover { background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 rgba(110,0,170,0.9),stop:1 rgba(210,0,190,0.9));
-                                border: 2px solid #ff00ff; color: #ffffff; }
-            QPushButton:checked, QPushButton:pressed { background: #cc00cc; border: 2px solid #ffffff; color: #ffffff; }
-            QPushButton:disabled { color: rgb(80, 60, 100); background-color: rgba(18,5,31,0.7); border: 2px solid #3a0050; }
-        """)
+        MainWindow.setStyleSheet(u"") # Styles moved to main.py for easier customization
 
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")

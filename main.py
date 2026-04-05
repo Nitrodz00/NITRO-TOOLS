@@ -18,72 +18,133 @@ ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 NITRO_STYLESHEET = """
 QMainWindow, QWidget {
     background-color: transparent;
-    color: #e0e0e0;
-    font-family: 'Agency FB', 'Segoe UI', sans-serif;
+    color: #f0f0ff;
+    font-family: 'Segoe UI Semibold', 'Agency FB', sans-serif;
 }
+
+/* Base Window - Deep Cosmic Gradient */
+#centralwidget {
+    background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, 
+        stop:0 #0d0020, stop:0.5 #1e003c, stop:1 #001220);
+    border: 1px solid #4d0099;
+}
+
+/* Make background images subtle and atmospheric */
+#appbackground, #gfx_page_background, #other_page_background, #label_8 {
+    background-color: rgba(20, 0, 40, 0.4); /* Glass overlay */
+    border: none;
+}
+
+/* Sidebar - Elegant and Slim */
 #PagesFrame {
-    background-color: rgba(15, 0, 30, 0.4);
-    border-left: 1px solid #3d007a;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-left: 1px solid rgba(204, 0, 255, 0.3);
 }
+
 #PagesFrame QPushButton {
     background-color: transparent;
     border: none;
-    border-bottom: 2px solid rgba(138, 43, 226, 0.2);
-    color: #9e9e9e;
-    font-size: 18px;
+    border-right: 3px solid transparent;
+    color: #b0b0cc;
+    font-size: 14pt;
     font-weight: 800;
+    padding: 15px;
+    text-transform: uppercase;
 }
+
 #PagesFrame QPushButton:hover {
     color: #ffffff;
-    background-color: rgba(255, 0, 255, 0.1);
+    background-color: rgba(204, 0, 255, 0.1);
+    border-right: 3px solid #ff00ff;
 }
+
 #PagesFrame QPushButton:checked {
     color: #00ffca;
     background-color: rgba(0, 255, 202, 0.1);
-    border-bottom: 3px solid #00ffca;
+    border-right: 4px solid #00ffca;
 }
+
+/* Header Dashboard Stats */
 QFrame#MonitorFrame {
-    background-color: rgba(10, 0, 25, 0.85);
-    border: 1px solid #4d0099;
-    border-radius: 6px;
-    padding: 2px;
+    background-color: rgba(30, 0, 60, 0.5);
+    border: 1px solid #7c00f0;
+    border-radius: 12px;
 }
+
 #appname_label {
     color: #ffffff;
-    font-size: 28px;
+    font-size: 36pt;
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: 5px;
+    background: transparent;
 }
+
+/* High-Performance Neon Buttons */
 QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1a0033, stop:1 #2d004d);
-    border: 1px solid #5e35b1;
-    border-radius: 6px;
-    color: #ede7f6;
-    font-weight: 800;
-    padding: 8px 15px;
-}
-QPushButton:hover {
-    border: 1px solid #00ffca;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+        stop:0 #6a11cb, stop:1 #2575fc);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
     color: #ffffff;
-    background: #311b92;
+    font-weight: 900;
+    font-size: 13pt;
+    padding: 12px;
 }
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+        stop:0 #8e2de2, stop:1 #4a00e0);
+    border: 1px solid #00ffca;
+    box-shadow: 0 0 15px rgba(0, 255, 202, 0.5);
+}
+
 QPushButton:checked {
     background: #00ffca;
     color: #000000;
-    border: 1px solid #ffffff;
+    border: 2px solid #ffffff;
 }
+
+QPushButton:disabled {
+    background: #101020;
+    color: #3b3b5c;
+    border: 1px solid #1c1c3c;
+}
+
+/* Specialized Force Close Button */
 QPushButton#forceclosegl_other_btn {
-    background: rgba(255, 0, 0, 0.2);
-    border: 1px solid #ff0000;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff0000, stop:1 #8b0000);
 }
-QPushButton#forceclosegl_other_btn:hover {
-    background: rgba(255, 0, 0, 0.4);
+
+/* Dropdowns & Inputs */
+QComboBox {
+    background-color: #0d0020;
+    border: 1px solid #7c00f0;
+    border-radius: 6px;
+    padding: 8px;
+    color: #00ffca;
+    font-weight: bold;
 }
-QStackedWidget {
+
+QComboBox::drop-down {
+    border-left: 1px solid #7c00f0;
+    width: 25px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0d0020;
+    border: 1px solid #7c00f0;
+    selection-background-color: #7c00f0;
+}
+
+/* Labels and Content */
+QLabel {
     background: transparent;
+    color: #ffffff;
 }
-#about_label_text {
-    line-height: 1.6;
+
+#appstatus_text_lable {
+    color: #00ffca;
+    font-weight: bold;
 }
 """
 

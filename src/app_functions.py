@@ -679,8 +679,11 @@ class Optimizer(Registry):
 
 
         if reset:
-            shutil.copy2(backup_file, original_file)
-            os.remove(backup_file)
+            if os.path.exists(backup_file):
+                shutil.copy2(backup_file, original_file)
+                os.remove(backup_file)
+            else:
+                self.logger.warning("No backup found to reset iPad layout.")
         else:
             if not os.path.exists(backup_file):
                 shutil.copy2(original_file, backup_file)
@@ -729,23 +732,48 @@ class Game(Optimizer):
         self.is_adb_working = None
 
     def gen_game_icon(self, game_name):
-        gameloop_ui_path = self.get_local_reg("InstallPath", path="UI") or r"C:\Program Files\TxGameAssistant\ui"
-        pythoncom.CoInitialize()
-        desktop = winshell.desktop()
+        try:
+            gameloop_ui_path = self.get_local_reg("InstallPath", path="UI") or r"C:\Temp"
+            pythoncom.CoInitialize()
+            
+            # Use winshell safely
+            desktop = winshell.desktop()
+            
+            version_id = next((key for key, value in self.pubg_versions.items() if value == game_name), None)
+            if not version_id:
+                self.logger.error(f"Version ID for '{game_name}' not found.")
+                return False
+                
+            path_icon = os.path.join(desktop, f"{game_name}.lnk")
+            target = os.path.join(gameloop_ui_path, "AndroidEmulatorEn.exe")
+            if not os.path.exists(target):
+                # Fallback to standard names
+                target = os.path.join(gameloop_ui_path, "AndroidEmulator.exe")
 
-        version_id = next((key for key, value in self.pubg_versions.items() if value == game_name), None)
-        path_icon = os.path.join(desktop, f"{game_name}.lnk")
-        target = rf"{gameloop_ui_path}\AndroidEmulatorEn.exe"
+            icon_source = self.resource_path(fr"assets\icons\{version_id}.ico")
+            icon_dest = os.path.join(gameloop_ui_path, f"{version_id}.ico")
+            
+            # Try to copy icon, if permission fails, use local path or skip
+            try:
+                if os.path.exists(icon_source):
+                    copy(icon_source, icon_dest)
+                else:
+                    icon_dest = icon_source # Use local if possible
+            except Exception as e:
+                self.logger.warning(f"Could not copy icon to gameloop path: {str(e)}")
+                icon_dest = icon_source # Use source as fallback
 
-        icon = self.resource_path(fr"assets\icons\{version_id}.ico")
-        copy(icon, fr"{gameloop_ui_path}\{version_id}.ico")
-
-        shortcut = Dispatch('WScript.Shell').CreateShortCut(path_icon)
-        shortcut.Targetpath = target
-        shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink"
-        shortcut.Description = "By NITRO - NITROTOOLS PUBG MOBILE"
-        shortcut.IconLocation = fr"{gameloop_ui_path}\{version_id}.ico"
-        shortcut.save()
+            shortcut = Dispatch('WScript.Shell').CreateShortCut(path_icon)
+            shortcut.Targetpath = target
+            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink"
+            shortcut.Description = "By NITRO - NITROTOOLS PUBG MOBILE"
+            if os.path.exists(icon_dest):
+                shortcut.IconLocation = icon_dest
+            shortcut.save()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to generate icon: {str(e)}", exc_info=True)
+            return False
 
     def check_adb_status(self):
         adb_status = self.get_reg("AdbDisable")
@@ -773,36 +801,45 @@ class Game(Optimizer):
         Robustly connects to Gameloop ADB by finding the correct port.
         """
         try:
-            # First, check registry for the specific port Gameloop is using
-            port = self.get_reg("AdbPort")
-            if not port:
-                port = 5554 # Fallback
+            # GameLoop usually stores ADB port in registry
+            reg_port = self.get_reg("AdbPort")
+            ports_to_try = []
+            if reg_port:
+                ports_to_try.append(int(reg_port))
             
-            # Form the serial based on the port
-            serial = f"127.0.0.1:{port}" if port != 5554 else "emulator-5554"
+            # Scan standard ADB ports for emulators
+            standard_ports = [5554, 5555, 5557, 5559, 5600]
+            for p in standard_ports:
+                if p not in ports_to_try:
+                    ports_to_try.append(p)
             
+            self.logger.info(f"Scanning GameLoop ports: {ports_to_try}")
             client = adbutils.AdbClient()
-            
-            # Explicitly try to connect if it's a network port
-            if port != 5554:
-                try:
-                    client.connect(f"127.0.0.1:{port}")
-                except Exception:
-                    pass
-
-            # List and detect best device
-            devices = client.device_list()
             device = None
-            
-            # Prioritize matching our specific serial
-            for d in devices:
-                if d.serial == serial or d.serial == "emulator-5554":
-                    device = d
-                    break
-            
+
+            for port in ports_to_try:
+                try:
+                    serial = f"127.0.0.1:{port}" if port != 5554 else "emulator-5554"
+                    # Try connecting
+                    if port != 5554:
+                        client.connect(f"127.0.0.1:{port}", timeout=1)
+                    
+                    devices = client.device_list()
+                    for d in devices:
+                        if d.serial == serial or (port == 5554 and d.serial == "emulator-5554"):
+                            device = d
+                            self.logger.info(f"Found active GameLoop device on {serial}")
+                            break
+                    if device: break
+                except:
+                    continue
+
             # Fallback: pick ANY emulator-like or just the first connected device
-            if not device and devices:
-                device = devices[0]
+            if not device:
+                devices = client.device_list()
+                if devices:
+                    device = devices[0]
+                    self.logger.info(f"Using fallback device: {device.serial}")
             
             if not device:
                 raise Exception("No active GameLoop device detected.")

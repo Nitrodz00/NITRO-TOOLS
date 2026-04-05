@@ -73,6 +73,13 @@ class Other(QObject):
         _width = self.app.settings.value("VMResWidth")
         _height = self.app.settings.value("VMResHeight")
 
+        # Populate Dropdowns
+        ui.dns_dropdown.clear()
+        ui.dns_dropdown.addItems(self.dns_servers.keys())
+        
+        ui.shortcut_dropdown.clear()
+        ui.shortcut_dropdown.addItems(self.app.pubg_versions.values())
+
         if _width is None or _height is None:
             ui.ipad_rest_btn.hide()
 
@@ -123,9 +130,15 @@ class Other(QObject):
 
     def shortcut_submit_button_click(self, e):
         """ Shortcut Submit Button On Click Function """
-        version_value = self.ui.shortcut_dropdown.currentText()
-        self.app.gen_game_icon(version_value)
-        self.app.show_status_message("Shortcut Generated Successfully")
+        try:
+            version_value = self.ui.shortcut_dropdown.currentText()
+            if self.app.gen_game_icon(version_value):
+                self.app.show_status_message("Shortcut Generated Successfully")
+            else:
+                self.app.show_status_message("Failed to generate shortcut. Try running as Admin.")
+        except Exception as e:
+            self.logger.error(f"Shortcut Error: {str(e)}", exc_info=True)
+            self.app.show_status_message("Error generating shortcut. Check error.log")
 
     def dns_submit_button_click(self, e):
         """ DNS Submit Button On Click Function """
@@ -139,13 +152,19 @@ class Other(QObject):
             self.app.show_status_message("Could not change DNS server")
 
     def dns_dropdown(self, value):
+        if not value or value not in self.dns_servers:
+            return
         server, _ = self.dns_servers[value]
-        pings = [ping3.ping(server, timeout=1, unit='ms', size=56) or float('inf') for _ in range(5)]
-        lowest_ping = min(pings)
-        if lowest_ping != float('inf'):
-            ping_result = f"{str(value).split(' -')[0]} Ping: {int(lowest_ping)}ms"
-        else:
-            ping_result = "No response from DNS servers"
+        try:
+            pings = [ping3.ping(server, timeout=1, unit='ms', size=56) or float('inf') for _ in range(3)]
+            lowest_ping = min(pings)
+            if lowest_ping != float('inf'):
+                ping_result = f"{str(value).split(' -')[0]} Ping: {int(lowest_ping)}ms"
+            else:
+                ping_result = "No response"
+        except Exception:
+            ping_result = "Error reaching DNS"
+            
         self.ui.dns_status_label.setText(ping_result)
 
     def ipad_submit_button_click(self, e):
