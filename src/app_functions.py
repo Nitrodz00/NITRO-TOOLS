@@ -19,6 +19,8 @@ from win32api import EnumDisplayDevices, EnumDisplaySettings
 from win32com.client import Dispatch
 from . import setup_logger
 
+CREATE_NO_WINDOW = 0x08000000
+
 
 class Settings:
     def __init__(self):
@@ -31,6 +33,16 @@ class Settings:
             "com.pubg.krmobile": "PUBG Mobile KR",
             "com.pubg.imobile": "Battlegrounds Mobile India"}
         self.logger = setup_logger('error_logger', 'error.log')
+        
+        # Add Gameloop UI path to ENV PATH so adbutils can find adb.exe
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\WOW6432Node\Tencent\MobileGamePC\UI') as key:
+                gl_path, _ = winreg.QueryValueEx(key, "InstallPath")
+                if gl_path and os.path.exists(gl_path):
+                    if gl_path not in os.environ["PATH"]:
+                        os.environ["PATH"] += os.pathsep + gl_path
+        except:
+            pass
 
     @staticmethod
     def kill_adb():
@@ -38,7 +50,7 @@ class Settings:
         Kills the ADB (Android Debug Bridge) process if it is currently running.
         """
         try:
-            subprocess.run(["taskkill", "/F", "/IM", "adb.exe"], check=True)
+            subprocess.run(["taskkill", "/F", "/IM", "adb.exe"], check=True, creationflags=CREATE_NO_WINDOW)
             return True
         except subprocess.CalledProcessError:
             return False
@@ -99,47 +111,6 @@ class Optimizer(Registry):
             winreg.CloseKey(key2)
         except Exception:
             pass
-
-    def start_auto_priority(self):
-        """Advanced Gameloop Auto Optimizer: CPU Core Affinity + High Priority + Telemetry killer"""
-        self.apply_network_tweaks()
-        import threading
-        
-        def loop():
-            # Leave core 0 for Windows, give the rest to Gameloop
-            total_cores = psutil.cpu_count(logical=True)
-            gaming_cores = list(range(1, total_cores)) if total_cores > 1 else [0]
-            
-            while True:
-                try:
-                    for proc in psutil.process_iter(['name']):
-                        name = proc.info['name']
-                        if name in ['AndroidEmulatorEn.exe', 'AndroidEmulatorEx.exe', 'AndroidEmulator.exe']:
-                            # Set High Priority
-                            if proc.nice() != psutil.HIGH_PRIORITY_CLASS:
-                                proc.nice(psutil.HIGH_PRIORITY_CLASS)
-                            
-                            # Set Core Affinity for stable FPS
-                            try:
-                                current_affinity = proc.cpu_affinity()
-                                if current_affinity != gaming_cores:
-                                    proc.cpu_affinity(gaming_cores)
-                            except Exception:
-                                pass
-                        
-                        # Kill Tencent telemetry tracking
-                        elif name in ['Syzs_dl_svr.exe', 'QMEmulatorService.exe', 'TBSWebRenderer.exe']:
-                            try:
-                                proc.terminate()
-                            except Exception:
-                                pass
-                except Exception:
-                    pass
-                sleep(30)
-                
-        t = threading.Thread(target=loop, daemon=True)
-        t.start()
-
 
     def temp_cleaner(self):
         """
@@ -223,9 +194,20 @@ class Optimizer(Registry):
         self.set_dword("RootAuthority", 1)
         self.set_dword("ScreenRawInput", 1)
 
-        gpu = GPUtil.getGPUs()[0] if GPUtil.getGPUs() else None
+        def safe_get_gpu():
+            CREATE_NO_WINDOW = 0x08000000
+            try:
+                cmd = ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"]
+                out = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW).stdout
+                if out.strip():
+                    name, vram = out.strip().split(',')
+                    return {"name": name.strip(), "memoryTotal": float(vram.strip())}
+            except: pass
+            return None
+
+        gpu = safe_get_gpu()
         if gpu:
-            gpu_memory = int(gpu.memoryTotal / 1024)
+            gpu_memory = int(gpu["memoryTotal"] / 1024)
             self.set_dword("SetGraphicsCard", 1)
             if gpu_memory < 4:
                 self.set_dword("VMDPI", 240)
@@ -275,8 +257,8 @@ class Optimizer(Registry):
         """
         try:
             gameloop_path = os.path.dirname(self.get_local_reg("InstallPath"))
-            command = ["powershell", "-Command", f"Add-MpPreference -ExclusionPath '{gameloop_path}' -Force"]
-            subprocess.call(command)
+            command = ["powershell", "-WindowStyle", "Hidden", "-Command", f"Add-MpPreference -ExclusionPath '{gameloop_path}' -Force"]
+            subprocess.call(command, creationflags=CREATE_NO_WINDOW)
         except Exception:
             return False
         return True
@@ -303,15 +285,14 @@ class Optimizer(Registry):
                     '/d', value_data,
                     '/f'
                 ]
-                subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
                 
-            # Add TCPAckFrequency and NetworkThrottlingIndex tweaks
+            # NetworkThrottlingIndex (TcpAckFrequency is interface-specific; skipping invalid global key)
             tcp_network_commands = [
                 ['reg', 'ADD', r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile', '/v', 'NetworkThrottlingIndex', '/t', 'REG_DWORD', '/d', '4294967295', '/f'],
-                ['reg', 'ADD', r'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces', '/v', 'TcpAckFrequency', '/t', 'REG_DWORD', '/d', '1', '/f']
             ]
             for cmd in tcp_network_commands:
-                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
 
 
             registry_entries = [
@@ -338,7 +319,7 @@ class Optimizer(Registry):
             ]
 
             for command in commands:
-                subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
         except Exception as e:
             self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
 
@@ -384,7 +365,7 @@ class Optimizer(Registry):
                     nvidia_profile_path,
                     "-silent"
                 ]
-                subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=CREATE_NO_WINDOW)
         except Exception as e:
             self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
 
@@ -420,7 +401,7 @@ class Optimizer(Registry):
 
         for process in processes_to_kill:
             result = subprocess.run(['taskkill', '/F', '/IM', process, '/T'], stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.DEVNULL)
+                                    stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
             if result.returncode == 0:
                 processes_killed += 1
 
@@ -441,7 +422,7 @@ class Optimizer(Registry):
         dns_changed_status = all(adapter.SetDNSServerSearchOrder(dns_servers)[0] == 0 for adapter in adapters)
 
         # Flush DNS cache
-        subprocess.run(['ipconfig', '/flushdns'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(['ipconfig', '/flushdns'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False, creationflags=CREATE_NO_WINDOW)
 
         return dns_changed_status
 
@@ -783,36 +764,84 @@ class Game(Optimizer):
 
     @staticmethod
     def is_gameloop_running():
-        running_process_list = subprocess.check_output(["tasklist"])
+        running_process_list = subprocess.check_output(["tasklist"], creationflags=CREATE_NO_WINDOW)
         emulator_processes = [b"AndroidEmulatorEx.exe", b"AndroidEmulatorEn.exe", b"AndroidEmulator.exe"]
         return any(process in running_process_list for process in emulator_processes)
 
     def check_adb_connection(self, first_check=True):
+        """
+        Robustly connects to Gameloop ADB by finding the correct port.
+        """
         try:
+            # First, check registry for the specific port Gameloop is using
+            port = self.get_reg("AdbPort")
+            if not port:
+                port = 5554 # Fallback
+            
+            # Form the serial based on the port
+            serial = f"127.0.0.1:{port}" if port != 5554 else "emulator-5554"
+            
             client = adbutils.AdbClient()
-            self.adb = client.device(serial="emulator-5554")
+            
+            # Explicitly try to connect if it's a network port
+            if port != 5554:
+                try:
+                    client.connect(f"127.0.0.1:{port}")
+                except Exception:
+                    pass
 
-            while not self.adb.shell("getprop dev.bootcomplete"):
-                pass
+            # List and detect best device
+            devices = client.device_list()
+            device = None
+            
+            # Prioritize matching our specific serial
+            for d in devices:
+                if d.serial == serial or d.serial == "emulator-5554":
+                    device = d
+                    break
+            
+            # Fallback: pick ANY emulator-like or just the first connected device
+            if not device and devices:
+                device = devices[0]
+            
+            if not device:
+                raise Exception("No active GameLoop device detected.")
 
+            self.adb = device
+            
+            # Wait for boot with timeout to prevent freezing
+            for i in range(15):
+                try:
+                    if self.adb.shell("getprop dev.bootcomplete").strip() == "1":
+                        break
+                except:
+                    pass
+                sleep(1)
+
+            # Verification push/pull test
             self.adb.sync.pull("/default.prop", self.resource_path(r'assets\testADB.prop'))
             self.is_adb_working = True
 
         except Exception as e:
-            self.kill_adb()
+            self.logger.error(f"ADB Connection Error: {str(e)}")
             self.is_adb_working = False
-
             if first_check:
+                # One retry after a small delay
+                sleep(2)
                 self.check_adb_connection(False)
 
     def pubg_version_found(self):
         """
         Checks if any version of PUBG is installed on the device.
         """
-        while not self.adb.shell("getprop dev.bootcomplete"):
-            pass
-        self.PUBG_Found = [version_name for package_name, version_name in self.pubg_versions.items()
-                           if self.adb.shell(f"pm list packages {package_name}")]
+        for _ in range(120):
+            if self.adb.shell("getprop dev.bootcomplete").strip() == "1":
+                break
+            sleep(0.5)
+        self.PUBG_Found = [
+            version_name for package_name, version_name in self.pubg_versions.items()
+            if self.adb.shell(f"pm list packages {package_name}").strip()
+        ]
 
     def get_graphics_file(self, package: str):
         active_savegames_path = f"/sdcard/Android/data/{package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/SaveGames/Active.sav"
@@ -931,9 +960,6 @@ class Game(Optimizer):
         shadow_value = {"ON": 48, "OFF": 49}.get(value)
         if shadow_value is None:
             return False
-        shadow_values = {"r.UserShadowSwitch": "1", "r.ShadowQuality": "1", "r.Mobile.DynamicObjectShadow": "1",
-                         "r.Shadow.MaxCSMResolution": "1", "r.Shadow.DistanceScale": "1",
-                         "r.Shadow.CSM.MaxMobileCascades": "1"}
         lines = []
         with open(self.resource_path(r"assets\user.ini"), "r") as file:
             for line in file:
@@ -975,8 +1001,9 @@ class Game(Optimizer):
             "Soft": b'\x04',
             "Movie": b'\x06'
         }
-        battle_style = battle_style_dict.get(style, "Not Found, It Will Be Added In The Next Update")
-        self.change_graphics_file("BattleRenderStyle", battle_style)
+        battle_style = battle_style_dict.get(style)
+        if battle_style is not None:
+            self.change_graphics_file("BattleRenderStyle", battle_style)
 
     def set_graphics_quality(self, quality):
         """
@@ -1000,29 +1027,47 @@ class Game(Optimizer):
 
     def push_active_shadow_file(self):
         """
-        Pushes the modified Active.sav & Shadow file to the device and restarts the game.
+        Pushes the modified Active.sav & Shadow file to the device and locks them to prevent reset.
         """
-        self.adb.shell(f"am force-stop {self.pubg_package}")
-        sleep(0.2)
+        try:
+            self.adb.shell(f"am force-stop {self.pubg_package}")
+            sleep(0.5)
 
-        data_dir = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved"
+            data_dir = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved"
 
-        files = [
-            (self.resource_path(r"assets\new.sav"), f"{data_dir}/SaveGames/Active.sav"),
-            (self.resource_path(r"assets\user.ini"), f"{data_dir}/Config/Android/UserCustom.ini")
-        ]
+            files = [
+                (self.resource_path(r"assets\new.sav"), f"{data_dir}/SaveGames/Active.sav"),
+                (self.resource_path(r"assets\user.ini"), f"{data_dir}/Config/Android/UserCustom.ini")
+            ]
 
-        for src, dest in files:
-            self.adb.sync.push(src, dest)
-            sleep(0.2)
+            for src, dest in files:
+                # First unlock it just in case it was locked from previous run
+                self.adb.shell(f"chmod 666 {dest}")
+                self.adb.sync.push(src, dest)
+                # LOCK THE FILE (444 = Read only) so the game cannot reset it!
+                self.adb.shell(f"chmod 444 {dest}")
+                sleep(0.3)
+            
+            return True
+        except Exception as e:
+            self.logger.error(f"Push Files Error: {str(e)}")
+            return False
 
     def start_app(self):
-        # Clear cache and shaders before starting
-        self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/cache/*")
-        self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Logs/*")
-        
-        package = f"{self.pubg_package}/com.epicgames.ue4.SplashActivity"
-        self.adb.shell(f"am start -n {package}")
+        """Starts PUBG with fresh cache and optimized state"""
+        try:
+            # Clear app cache, logs, and shader cache for better smoothness
+            self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/cache/*")
+            self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Logs/*")
+            self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Shaders/*")
+            
+            # Start the game with SplashActivity
+            package = f"{self.pubg_package}/com.epicgames.ue4.SplashActivity"
+            self.adb.shell(f"am start -n {package}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Start App Error: {str(e)}")
+            return False
 
     def kr_fullhd(self):
         def backup_folder(path):
@@ -1048,7 +1093,7 @@ class Game(Optimizer):
         safe_path = "/sdcard/nitro_safe_folder"
         data_path_for_account = f"/data/data/{self.pubg_package}"
 
-        self.adb.push(self.resource_path('assets\nitro_kr.ini'), user_custom_ini_path)
+        self.adb.push(self.resource_path(r"assets\nitro_kr.ini"), user_custom_ini_path)
 
         self.adb.shell(f"mkdir -p {safe_path}")
         self.adb.shell(f"cp -r {data_path_for_account}/shared_prefs {safe_path}/shared_prefs")

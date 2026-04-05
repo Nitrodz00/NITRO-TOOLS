@@ -32,6 +32,11 @@ class DownloadThread(QThread):
                             if total_size:
                                 progress = int((bytes_downloaded / total_size) * 100)
                                 self.download_progress.emit(progress)
+                if self.filename.endswith(".exe"):
+                    os.startfile(self.filename, 'runas')
+                    self.download_complete.emit()
+                    return
+
                 try:
                     with zipfile.ZipFile(self.filename, 'r') as zip_ref:
                         exe_file = next((name for name in zip_ref.namelist() if name.endswith(".exe")), None)
@@ -42,7 +47,7 @@ class DownloadThread(QThread):
                         else:
                             self.download_failed.emit("No EXE found in the update file.")
                 except zipfile.BadZipFile:
-                    self.download_failed.emit("Downloaded file is corrupted.")
+                    self.download_failed.emit("Downloaded file is corrupted or not a valid zip.")
             else:
                 self.download_failed.emit(f"Download failed: HTTP {response.status_code}")
         except Exception as e:
@@ -60,6 +65,12 @@ class CheckUpdateThread(QThread):
         self.current_version = current_version
         self.repo_url = repo_url
 
+    @staticmethod
+    def _normalize_version(v):
+        if not v:
+            return ""
+        return v.strip().lower().lstrip("v")
+
     def run(self):
         try:
             response = requests.get(self.repo_url, timeout=5)
@@ -67,7 +78,9 @@ class CheckUpdateThread(QThread):
                 data = response.json()
                 latest_version = data.get("tag_name", "")
                 assets = data.get("assets", [])
-                if latest_version and latest_version != self.current_version and assets:
+                cur = self._normalize_version(self.current_version)
+                lat = self._normalize_version(latest_version)
+                if latest_version and lat != cur and assets:
                     asset = assets[0]
                     self.update_available.emit(
                         latest_version,

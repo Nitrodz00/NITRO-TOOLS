@@ -6,6 +6,7 @@ from . import setup_logger
 
 class IPADWorkerThread(QThread):
     task_completed = pyqtSignal()
+    invalid_dimensions = pyqtSignal()
 
     def __init__(self, window, ui, gfx):
         super(IPADWorkerThread, self).__init__()
@@ -14,7 +15,11 @@ class IPADWorkerThread(QThread):
         self.gfx = gfx
 
     def run(self):
-        width, height = self.extract_dimensions(self.ui.ipad_dropdown.currentText())
+        dims = self.extract_dimensions(self.ui.ipad_dropdown.currentText())
+        if dims is None:
+            self.invalid_dimensions.emit()
+            return
+        width, height = dims
         self.app.ipad_settings(width, height)
         self.task_completed.emit()
 
@@ -81,35 +86,32 @@ class Other(QObject):
             self.app.show_status_message(f"There was an Error saved in error.log")
 
     def gameloop_smart_settings_button_click(self, e):
-        """ Gameloop Smart Settings Button On Click Function """
+        """ Low-End Mode Button """
         try:
-            self.app.gameloop_settings()
-            self.app.show_status_message("Smart settings applied successfully.")
+            self.app.optimizer.apply_performance_mode('low')
+            self.app.show_status_message("Low-End optimization applied.")
         except Exception as e:
-            self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
-            self.app.show_status_message(f"There was an Error saved in error.log")
+            self.logger.error(f"Mode Error: {str(e)}", exc_info=True)
+            self.app.show_status_message("Error applying Low-End mode.")
+
     def gameloop_optimizer_button_click(self, e):
-        """ Gameloop Optimizer Button On Click Function """
+        """ Balanced Mode Button """
         try:
-            self.app.add_to_windows_defender_exclusion()
-            self.app.optimize_gameloop_registry()
-            self.app.optimize_for_nvidia()
-            self.app.show_status_message("Gameloop optimizer applied successfully.")
+            self.app.optimizer.apply_performance_mode('balanced')
+            self.app.show_status_message("Balanced mode applied.")
         except Exception as e:
-            self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
-            self.app.show_status_message(f"There was an Error saved in error.log")
+            self.logger.error(f"Mode Error: {str(e)}", exc_info=True)
+            self.app.show_status_message("Error applying Balanced mode.")
+
     def all_recommended_button_click(self, e):
-        """ All Recommended Button On Click Function """
+        """ Competitive Mode Button (All Features) """
         try:
-            self.app.gameloop_settings()
-            self.app.add_to_windows_defender_exclusion()
-            self.app.optimize_gameloop_registry()
-            self.app.optimize_for_nvidia()
-            self.app.temp_cleaner()
-            self.app.show_status_message("All recommended settings applied successfully.")
+            self.app.optimizer.apply_performance_mode('competitive')
+            self.app.optimizer.clean_cache()
+            self.app.show_status_message("COMPETITIVE MODE: Max Power & Low Latency.")
         except Exception as e:
-            self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
-            self.app.show_status_message(f"There was an Error saved in error.log")
+            self.logger.error(f"Mode Error: {str(e)}", exc_info=True)
+            self.app.show_status_message("Error applying Competitive mode.")
 
     def kill_gameloop_processes_button_click(self, e):
         """Terminates Gameloop processes when the button is clicked."""
@@ -156,9 +158,15 @@ class Other(QObject):
             self.ui.ipad_rest_btn.setEnabled(False)
             self.worker_ipad_submit = IPADWorkerThread(self.app, self.ui, self)
             self.worker_ipad_submit.task_completed.connect(self.submit_ipad_done)
+            self.worker_ipad_submit.invalid_dimensions.connect(self._ipad_invalid_dimensions)
             self.worker_ipad_submit.start()
         except ValueError:
             self.app.show_status_message("Invalid width or height values", 5)
+
+    def _ipad_invalid_dimensions(self):
+        self.ui.ipad_other_btn.setEnabled(True)
+        self.ui.ipad_rest_btn.setEnabled(True)
+        self.app.show_status_message("Could not read resolution from the selected option.", 5)
 
     def submit_ipad_done(self):
         self.ui.ipad_other_btn.setEnabled(True)

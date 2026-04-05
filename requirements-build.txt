@@ -1,0 +1,2 @@
+# Optional: only for packaging (pyinstaller NITROTOOLS_RELEASE.spec)
+pyinstaller>=6.0

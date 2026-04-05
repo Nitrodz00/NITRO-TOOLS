@@ -8,7 +8,10 @@ __pycache__/
 dist/
 build/
 *.spec
+!NITROTOOLS_RELEASE.spec
 *.egg-info/
+
+build_log.txt
 
 # Logs
 *.log
