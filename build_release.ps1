@@ -13,6 +13,7 @@ python -m pip install -q -r requirements.txt
 python -m pip install -q -r requirements-build.txt
 
 Write-Host "Building NITROTOOLS_RELEASE.spec (clean)..." -ForegroundColor Cyan
+$env:PYINSTALLER_EXE_NAME = "NITROTOOLS_PUBG_MOBILE_v$ReleaseVersion"
 python -m PyInstaller --noconfirm --clean NITROTOOLS_RELEASE.spec
 
 $exe = Join-Path $PSScriptRoot "dist\$ExeName"

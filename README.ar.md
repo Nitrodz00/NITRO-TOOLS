@@ -44,7 +44,11 @@
 
 ## 📥 تحميل
 
-حمّل آخر إصدار من `NitroTools.exe` من [صفحة الإصدارات](https://github.com/Nitrodz00/NITRO-TOOLS/releases).
+**آخر إصدار (للجميع، بدون تسجيل):**  
+[صفحة الإصدارات — الأحدث](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)
+
+- افتح **Assets** في آخر إصدار وحمّل الملف **`NITROTOOLS_PUBG_MOBILE_v*.exe`** (ويندوز 64-bit).
+- يتم بناء الملف ورفعه تلقائياً عند دفع **وسم إصدار** (`git tag` + `git push`) عبر GitHub Actions.
 
 > ⚠️ شغّل البرنامج كـ **مسؤول (Run as Administrator)** للحصول على كامل الصلاحيات.
 

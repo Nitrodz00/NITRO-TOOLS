@@ -1,6 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Single-file release build: pyinstaller NITROTOOLS_RELEASE.spec
+# Optional: set PYINSTALLER_EXE_NAME (e.g. NITROTOOLS_PUBG_MOBILE_v2.1.0) for CI/local builds
+import os
 from PyInstaller.utils.hooks import collect_all
+
+_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v2.1.0")
 
 datas = [('assets', 'assets')]
 binaries = []
@@ -54,7 +58,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='NITROTOOLS_PUBG_MOBILE_v2.1.0',
+    name=_exe_basename,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -83,6 +83,9 @@ QStackedWidget {
 """
 
 
+# Update check: GET GitHub Releases API (needs internet). If offline, blocked, or no Releases
+# published, the app still opens (see CheckUpdateThread). To skip the request entirely:
+#   set env NITROTOOLS_SKIP_UPDATE_CHECK=1
 GITHUB_REPO_API = "https://api.github.com/repos/Nitrodz00/NITRO-TOOLS/releases/latest"
 
 # Global references kept alive
@@ -108,6 +111,10 @@ def run_application():
 
 def check_updates_silently():
     global _update_checker
+    skip = environ.get("NITROTOOLS_SKIP_UPDATE_CHECK", "").strip().lower()
+    if skip in ("1", "true", "yes", "on"):
+        run_application()
+        return
     _update_checker = CheckUpdateThread(APP_VERSION, GITHUB_REPO_API)
     _update_checker.update_available.connect(on_update_available)
     _update_checker.no_update.connect(run_application)

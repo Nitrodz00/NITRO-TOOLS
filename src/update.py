@@ -55,7 +55,11 @@ class DownloadThread(QThread):
 
 
 class CheckUpdateThread(QThread):
-    """Checks GitHub for updates silently in background."""
+    """
+    Checks GitHub Releases API in the background (requires internet).
+    - On success: either shows update dialog or opens the main app.
+    - On failure (timeout, DNS, 404, no assets): emits check_failed or no_update; app still opens.
+    """
     update_available = pyqtSignal(str, str, str)   # latest_version, download_url, asset_name
     no_update = pyqtSignal()
     check_failed = pyqtSignal()
@@ -90,9 +94,10 @@ class CheckUpdateThread(QThread):
                 else:
                     self.no_update.emit()
             else:
-                self.no_update.emit()
+                # e.g. 404 if no releases published, or 403 rate limit
+                self.check_failed.emit()
         except Exception:
-            self.no_update.emit()
+            self.check_failed.emit()
 
 
 class UpdateWindow(QMainWindow):

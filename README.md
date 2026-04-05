@@ -45,9 +45,25 @@
 
 ## 📥 Download
 
-Download the latest `NitroTools.exe` from the [Releases page](https://github.com/Nitrodz00/NITRO-TOOLS/releases).
+**Latest build (public, no login required):**  
+[https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)
+
+- Open **Assets** on the latest release and download **`NITROTOOLS_PUBG_MOBILE_v*.exe`** (Windows 64-bit).
+- Releases are produced automatically when a version tag is pushed (see below). Anyone can download the attached `.exe`.
 
 > ⚠️ Run as **Administrator** for full functionality.
+
+### Publish a new downloadable release (maintainers)
+
+1. Bump `APP_VERSION` in `main.py` (e.g. `v2.2.0`) and commit.
+2. Create and push a matching Git tag:
+   ```bash
+   git tag v2.2.0
+   git push origin v2.2.0
+   ```
+3. GitHub Actions builds the EXE and attaches it to that release. Users get it from **Releases → latest**.
+
+Or run **Actions → Release Windows EXE → Run workflow** to build without a tag (artifact available from the workflow run).
 
 ---
 
@@ -58,10 +74,11 @@ pip install -r requirements.txt
 python main.py
 ```
 
-To build EXE:
-```bash
-pyinstaller --noconfirm --clean --onefile --windowed --add-data "assets;assets" --hidden-import pkg_resources --hidden-import setuptools --collect-all adbutils --icon "assets/icons/logo.ico" "main.py" --name "NitroTools"
+To build EXE locally (same output as CI):
+```powershell
+.\build_release.ps1
 ```
+Or: `pip install -r requirements-build.txt` then `pyinstaller NITROTOOLS_RELEASE.spec` (set `PYINSTALLER_EXE_NAME` if you need a custom file name).
 
 ---
 
