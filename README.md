@@ -5,41 +5,31 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/Nitrodz00/NITRO-TOOLS/total?color=brightgreen)](https://github.com/Nitrodz00/NITRO-TOOLS/releases)
 [![GitHub issues](https://img.shields.io/github/issues-raw/Nitrodz00/NITRO-TOOLS)](https://github.com/Nitrodz00/NITRO-TOOLS/issues)
 
-> **NITROTOOLS** — The ultimate PUBG Mobile performance optimization tool for **Gameloop 64-bit** emulator.  
-> Designed to give you the **smoothest 120 FPS** gaming experience with zero input lag and zero stutter.
+> **NITROTOOLS** — The ultimate AI-Powered performance optimization tool for **Gameloop 64-bit** emulator.  
+> Experience **Ultra-Smooth 120 FPS** with zero input lag, professional aesthetics, and real-time system monitoring.
 
 ---
 
 ## ⚡ Features
 
-### 🎨 Graphics Optimizer
-- Unlock all graphics settings including **Super Smooth**, Smooth, Balanced, HD, HDR, Ultra HD
-- Override Gameloop's locked presets directly via `Active.sav`
-- Force maximum draw distance and anti-aliasing
+### 🧠 AI Dynamic Optimizer
+- **Intelligent Modes:** Automatically switches between `Low-End`, `Balanced`, and `Competitive` modes based on real-time resource usage.
+- **Hardware Watcher:** Real-time monitoring of **FPS, CPU, GPU, and RAM** directly in the header overlay.
 
-### 🚀 Gameloop Engine Tweaks (64-bit)
-- Targets `AndroidEmulatorEn.exe` directly (not AppMarket) for raw performance
-- **VSync OFF** — eliminates frame drops and display lag
-- **ScreenRawInput = 1** — perfect 1:1 mouse accuracy
-- **EnableRootAuthority = 1** — full engine access
+### 🎨 Ultra-Modern Cosmic Theme
+- Professional Cyberpunk aesthetics with deep navy and cosmic purple gradients.
+- Neon interaction effects and refined typography for maximum readability.
 
-### 🌐 Network Optimization
-- `TcpAckFrequency` tweaks for minimum ping
-- `NetworkThrottlingIndex` registry fix for maximum bandwidth priority
-- DNS Changer — Google, Cloudflare, Quad9, Cisco, Yandex
+### 🧹 Advanced System Optimization
+- **Temp Cleaner:** Wipes Gameloop ShaderCache and system temporary files.
+- **PC Optimizer:** Specific registry tweaks to reduce DPC latency and stabilize frametime.
+- **Auto-Priority:** Forces `AndroidEmulatorEn.exe` to high process priority in the background.
 
-### 🧹 System Cleaner
-- Wipes Gameloop ShaderCache, logs, and temp files before every game launch
-- Cleans Windows `%temp%`, `C:\Windows\Temp`, and `Prefetch`
-
-### ⚙️ Auto-Priority Enforcer
-- Automatically forces `AndroidEmulatorEn.exe` to **High Priority** every 60 seconds in the background
-
-### 🖥️ Other Tools
-- iPad View (resolution changer)
-- Desktop shortcut creator (all PUBG Mobile versions)
-- PC Optimizer (registry tweaks for gaming)
-- Force Close Gameloop
+### 🛠️ Versatile Toolkit
+- iPad View (resolution customizer).
+- ADB Auto-Port Discovery for Gameloop.
+- Automated Desktop Shortcut creator for all PUBG Mobile versions.
+- Force Close & Cleanup tools.
 
 ---
 
