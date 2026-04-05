@@ -138,38 +138,43 @@ class Window(QtWidgets.QMainWindow, Game):
 
     def _fix_ui_layouts(self):
         """Fix hardcoded UI overlaps from the .ui file."""
-        # 1. Increase Frame Heights to prevent clipping
-        self.ui.GraphicsFrame.setMinimumHeight(110)
-        self.ui.FramerateFrame.setMinimumHeight(110)
-        self.ui.ShadowFrame.setMinimumHeight(110)
-        
-        # 2. Add Spacing to the main GFX grid
-        self.ui.gridLayout.setVerticalSpacing(25)
-        self.ui.gridLayout.setContentsMargins(15, 15, 15, 15)
+        try:
+            # 1. Increase Frame Heights to prevent clipping
+            self.ui.GraphicsFrame.setMinimumHeight(110)
+            self.ui.FramerateFrame.setMinimumHeight(110)
+            self.ui.ShadowFrame.setMinimumHeight(110)
+            
+            # 2. Add Spacing to the main GFX grid
+            if hasattr(self.ui, 'gridLayout'):
+                self.ui.gridLayout.setVerticalSpacing(25)
+                self.ui.gridLayout.setContentsMargins(15, 15, 15, 15)
 
-        # 3. Position elements SAFELY inside their respective frames (Relative to Frame Y=0)
-        # Graphics
-        self.ui.graphics_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
-        self.ui.layoutWidget.setGeometry(QtCore.QRect(10, 50, 1050, 45))
-        
-        # Framerate
-        self.ui.fps_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
-        self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 50, 1050, 45))
+            # 3. Position elements SAFELY inside their respective frames
+            # Graphics
+            if hasattr(self.ui, 'graphics_label'): self.ui.graphics_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
+            if hasattr(self.ui, 'layoutWidget'): self.ui.layoutWidget.setGeometry(QtCore.QRect(10, 50, 1050, 45))
+            
+            # Framerate
+            if hasattr(self.ui, 'fps_label'): self.ui.fps_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
+            if hasattr(self.ui, 'layoutWidget1'): self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 50, 1050, 45))
 
-        # Shadow
-        self.ui.shadow_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
-        self.ui.layoutWidget3.setGeometry(QtCore.QRect(10, 50, 300, 45))
+            # Shadow (Fixed naming: layoutWidget_2 instead of layoutWidget3)
+            if hasattr(self.ui, 'shadow_label'): self.ui.shadow_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
+            if hasattr(self.ui, 'layoutWidget_2'): self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 50, 300, 45))
 
-        # 4. Status Bar Overlap Fix
-        self.ui.appstatus_label.setGeometry(QtCore.QRect(10, 680, 100, 40))
-        self.ui.appstatus_text_lable.setGeometry(QtCore.QRect(120, 680, 600, 40))
+            # 4. Status Bar Overlap Fix
+            if hasattr(self.ui, 'appstatus_label'): self.ui.appstatus_label.setGeometry(QtCore.QRect(10, 680, 100, 40))
+            if hasattr(self.ui, 'appstatus_text_lable'): self.ui.appstatus_text_lable.setGeometry(QtCore.QRect(120, 680, 600, 40))
 
-        # 5. OTHER page spacing refinement
-        self.ui.optimizer_label.setGeometry(QtCore.QRect(30, 20, 400, 50))
-        self.ui.shortcut_label.setGeometry(QtCore.QRect(520, 20, 400, 50))
-        
-        # 6. Sidebar & Global Buttons
-        self.ui.PagesFrame.setGeometry(QtCore.QRect(1120, 80, 180, 640))
+            # 5. OTHER page spacing refinement
+            if hasattr(self.ui, 'optimizer_label'): self.ui.optimizer_label.setGeometry(QtCore.QRect(30, 20, 400, 50))
+            if hasattr(self.ui, 'shortcut_label'): self.ui.shortcut_label.setGeometry(QtCore.QRect(520, 20, 400, 50))
+            
+            # 6. Sidebar & Global Buttons
+            if hasattr(self.ui, 'PagesFrame'): self.ui.PagesFrame.setGeometry(QtCore.QRect(1120, 80, 180, 640))
+        except Exception as e:
+            # Prevent minor UI glitches from crashing the whole app
+            print(f"Non-critical UI layout adjustment failed: {e}")
 
         # ui.py sets PagesFrame QPushButton:checked { border-image: menu_checked.png } — causes green/yellow edge artifact
         self.ui.PagesFrame.setStyleSheet("")

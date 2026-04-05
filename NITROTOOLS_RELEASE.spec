@@ -4,7 +4,7 @@
 import os
 from PyInstaller.utils.hooks import collect_all, copy_metadata
 
-_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v2.1.7")
+_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v2.1.8")
 
 datas = [('assets', 'assets')]
 binaries = []
