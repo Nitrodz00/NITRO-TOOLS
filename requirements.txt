@@ -1,4 +1,5 @@
 adbutils==1.2.9
+setuptools
 Pillow
 GPUtil
 ping3
