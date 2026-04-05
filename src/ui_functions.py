@@ -112,26 +112,26 @@ class Window(QtWidgets.QMainWindow, Game):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(15)
         
-        self.fps_label = QtWidgets.QLabel("FPS: 0")
-        self.fps_label.setStyleSheet("color: #00ffca; font-size: 22px; font-weight: 900; font-family: 'Agency FB';")
+        self.header_fps_label = QtWidgets.QLabel("FPS: 0")
+        self.header_fps_label.setStyleSheet("color: #00ffca; font-size: 22px; font-weight: 900; font-family: 'Agency FB';")
         
-        self.cpu_label = QtWidgets.QLabel("CPU: 0%")
-        self.cpu_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
+        self.header_cpu_label = QtWidgets.QLabel("CPU: 0%")
+        self.header_cpu_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
         
-        self.gpu_label = QtWidgets.QLabel("GPU: 0%")
-        self.gpu_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
+        self.header_gpu_label = QtWidgets.QLabel("GPU: 0%")
+        self.header_gpu_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
         
-        self.ram_label = QtWidgets.QLabel("RAM: 0%")
-        self.ram_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
+        self.header_ram_label = QtWidgets.QLabel("RAM: 0%")
+        self.header_ram_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
         
         self.ai_status = QtWidgets.QLabel("[ AI STANDBY ]")
         self.ai_status.setStyleSheet("color: #ff00ff; font-weight: 800; font-size: 10px; letter-spacing: 1px;")
         
-        layout.addWidget(self.fps_label)
+        layout.addWidget(self.header_fps_label)
         layout.addStretch()
-        layout.addWidget(self.cpu_label)
-        layout.addWidget(self.gpu_label)
-        layout.addWidget(self.ram_label)
+        layout.addWidget(self.header_cpu_label)
+        layout.addWidget(self.header_gpu_label)
+        layout.addWidget(self.header_ram_label)
         layout.addWidget(self.ai_status)
         
         self.monitor_frame.show()
@@ -140,8 +140,9 @@ class Window(QtWidgets.QMainWindow, Game):
         """Fix hardcoded UI overlaps from the .ui file."""
         # Fix Graphics row overlap
         self.ui.layoutWidget.setGeometry(QtCore.QRect(15, 60, 1050, 45))
-        # Fix Framerate row overlap (Increased gap between rows)
-        self.ui.layoutWidget1.setGeometry(QtCore.QRect(15, 115, 1050, 45))
+        # Fix Framerate row overlap (Safe gap: label at 110, layout at 150)
+        self.ui.layoutWidget1.setGeometry(QtCore.QRect(15, 150, 1050, 45))
+        self.ui.fps_label.setGeometry(QtCore.QRect(15, 110, 150, 35))
         # Fix Sidebar position and style
         self.ui.PagesFrame.setGeometry(QtCore.QRect(1120, 80, 180, 640))
         self.ui.gfx_button.setGeometry(QtCore.QRect(5, 10, 170, 70))
@@ -204,10 +205,10 @@ class Window(QtWidgets.QMainWindow, Game):
 
     def _on_stats_updated(self, stats: dict):
         """Update live dashboard stats and run AI Dynamic Optimizer."""
-        self.fps_label.setText(f"FPS: {int(stats['fps'])}")
-        self.cpu_label.setText(f"CPU: {int(stats['cpu_percent'])}%")
-        self.gpu_label.setText(f"GPU: {int(stats['gpu_percent'])}%")
-        self.ram_label.setText(f"RAM: {int(stats['ram_percent'])}%")
+        self.header_fps_label.setText(f"FPS: {int(stats['fps'])}")
+        self.header_cpu_label.setText(f"CPU: {int(stats['cpu_percent'])}%")
+        self.header_gpu_label.setText(f"GPU: {int(stats['gpu_percent'])}%")
+        self.header_ram_label.setText(f"RAM: {int(stats['ram_percent'])}%")
         
         # Evaluate stats with AI (Part 2 - Dynamic Optimization)
         if self.watcher.game_running:

@@ -87,7 +87,7 @@ class Other(QObject):
         """ Temp Cleaner Button On Click Function """
         try:
             self.app.temp_cleaner()
-            self.app.show_status_message("System performance improved.")
+            self.app.show_status_message("System performance optimized & temporary files cleaned", 5)
         except Exception as e:
             self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
             self.app.show_status_message(f"There was an Error saved in error.log")
