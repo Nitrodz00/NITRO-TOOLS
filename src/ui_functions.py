@@ -193,20 +193,20 @@ class Window(QtWidgets.QMainWindow, Game):
                 self.ui.fps_label.setStyleSheet(label_style + "font-size: 24px;")
             if hasattr(self.ui, 'layoutWidget1'): 
                 self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 60, 1050, 45))
-
+            
             # Shadow
             if hasattr(self.ui, 'shadow_label'): 
-                self.ui.shadow_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
-                self.ui.shadow_label.setStyleSheet(label_style + "font-size: 24px;")
+                self.ui.shadow_label.setGeometry(QtCore.QRect(10, 0, 400, 35))
+                self.ui.shadow_label.setStyleSheet(label_style + "font-size: 22px;") # Slightly smaller font
             if hasattr(self.ui, 'layoutWidget_2'): 
-                self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 70, 400, 45))
+                self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 55, 400, 45))
             
             # Resolution
             if hasattr(self.ui, 'resolution_label'):
-                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
-                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 24px;")
+                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 0, 400, 35))
+                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 22px;") 
             if hasattr(self.ui, 'resolution_btn'):
-                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 70, 200, 45))
+                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 55, 200, 45))
             
             # --- PROGRAMMATICALLY ADD SYSTEM PAGE ---
             if not hasattr(self.ui, 'system_page'):
@@ -214,60 +214,63 @@ class Window(QtWidgets.QMainWindow, Game):
                 self.ui.system_page.setObjectName("system_page")
                 
                 system_layout = QtWidgets.QVBoxLayout(self.ui.system_page)
-                system_layout.setContentsMargins(50, 50, 50, 50)
-                system_layout.setSpacing(25)
+                system_layout.setContentsMargins(50, 40, 50, 40)
+                system_layout.setSpacing(20)
                 
                 title = QtWidgets.QLabel("System Optimization Pro")
-                title.setStyleSheet("font-size: 35px; color: #ffffff; font-weight: 800;")
+                title.setStyleSheet("font-size: 32px; color: #ffffff; font-weight: 800;")
                 system_layout.addWidget(title)
                 
                 desc = QtWidgets.QLabel("Boost your system stability and priority for maximum gaming performance.")
-                desc.setStyleSheet("color: #aaaaaa; font-size: 14px;")
+                desc.setStyleSheet("color: #aaaaaa; font-size: 13px;")
                 system_layout.addWidget(desc)
+                
+                # Button Config
+                btn_h = 52
                 
                 # High Priority Button
                 self.ui.high_priority_btn = QtWidgets.QPushButton("🚀 ACTIVATE HIGH PRIORITY (GAMELOOP)")
-                self.ui.high_priority_btn.setMinimumHeight(55)
+                self.ui.high_priority_btn.setMinimumHeight(btn_h)
                 system_layout.addWidget(self.ui.high_priority_btn)
 
                 # CPU Affinity Button
                 self.ui.cpu_affinity_btn = QtWidgets.QPushButton("🧠 OPTIMIZE CPU CORES (AFFINITY)")
-                self.ui.cpu_affinity_btn.setMinimumHeight(55)
+                self.ui.cpu_affinity_btn.setMinimumHeight(btn_h)
                 self.ui.cpu_affinity_btn.setStyleSheet("background: #003366; border: 2px solid #00ffca;")
                 system_layout.addWidget(self.ui.cpu_affinity_btn)
 
                 # Power Plan Buttons
                 self.ui.high_perf_power_btn = QtWidgets.QPushButton("⚡ ACTIVATE HIGH PERFORMANCE")
-                self.ui.high_perf_power_btn.setMinimumHeight(55)
+                self.ui.high_perf_power_btn.setMinimumHeight(btn_h)
                 system_layout.addWidget(self.ui.high_perf_power_btn)
 
                 self.ui.ultimate_perf_power_btn = QtWidgets.QPushButton("💎 ACTIVATE ULTIMATE PERFORMANCE")
-                self.ui.ultimate_perf_power_btn.setMinimumHeight(55)
+                self.ui.ultimate_perf_power_btn.setMinimumHeight(btn_h)
                 self.ui.ultimate_perf_power_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ffcc00, stop:1 #ff00ff); color: #000; font-weight: 900;")
                 system_layout.addWidget(self.ui.ultimate_perf_power_btn)
 
                 # RAM Cleaner Button
                 self.ui.ram_cleaner_btn = QtWidgets.QPushButton("🧹 CLEAN RAM STANDBY LIST")
-                self.ui.ram_cleaner_btn.setMinimumHeight(55)
+                self.ui.ram_cleaner_btn.setMinimumHeight(btn_h)
                 self.ui.ram_cleaner_btn.setStyleSheet("background: #1a0033; border: 2px solid #ff00ff;")
                 system_layout.addWidget(self.ui.ram_cleaner_btn)
 
                 # Ping Stabilizer Button
                 self.ui.ping_stab_btn = QtWidgets.QPushButton("📡 STABILIZE PING (NETWORK PRIORITY)")
-                self.ui.ping_stab_btn.setMinimumHeight(55)
+                self.ui.ping_stab_btn.setMinimumHeight(btn_h)
                 self.ui.ping_stab_btn.setStyleSheet("background: #004d00; border: 2px solid #00ff00;")
                 system_layout.addWidget(self.ui.ping_stab_btn)
                 
-                exp_spacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+                exp_spacer = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
                 system_layout.addItem(exp_spacer)
                 
                 self.ui.stackedWidget.addWidget(self.ui.system_page)
                 
-            # Add System Button to Sidebar with correct style
+            # Add System Button to Sidebar with CORRECT width 168 to match others
             if not hasattr(self.ui, 'system_button'):
                 self.ui.system_button = QtWidgets.QPushButton("SYSTEM", self.ui.PagesFrame)
                 self.ui.system_button.setObjectName("system_button")
-                self.ui.system_button.setGeometry(QtCore.QRect(0, 170, 180, 80))
+                self.ui.system_button.setGeometry(QtCore.QRect(0, 170, 168, 80)) # PERFECT MATCH
                 self.ui.system_button.setCheckable(True)
                 self.ui.system_button.show()
 
