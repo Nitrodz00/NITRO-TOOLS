@@ -1061,7 +1061,7 @@ class Ui_MainWindow(object):
                                                                      "                                <p>Level up your gaming experience today!</p>\n"
                                                                      "                                </center>\n"
                                                                      "                            ", None))
-            self.appname_label.setText(QCoreApplication.translate("MainWindow", u"NITROTOOLS PUBG MOBILE v2.3.5", None))
+            self.appname_label.setText(QCoreApplication.translate("MainWindow", u"NITROTOOLS PUBG MOBILE v2.4.0", None))
             self.appstatus_label.setText(QCoreApplication.translate("MainWindow", u"Status:", None))
             self.appstatus_text_lable.setText("")
             self.close_btn.setText(QCoreApplication.translate("MainWindow", u"X", None))
