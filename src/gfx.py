@@ -1,5 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
-
+import os
+import sys
+import json
 
 class SubmitWorkerThread(QThread):
     task_completed = pyqtSignal()
@@ -27,17 +29,18 @@ class SubmitWorkerThread(QThread):
 
         self.app.save_graphics_file()
         
-        # Handle Shadow Setting
+        # Handle Shadow Setting - Fixed using objectName for image buttons
         checked_shadow_button = next((button for button in self.gfx.shadow_buttons if button.isChecked()), None)
         if checked_shadow_button:
-            shadow_val = "ON" if "Enable" in checked_shadow_button.text() else "OFF"
+            shadow_val = "ON" if "enable" in checked_shadow_button.objectName().lower() else "OFF"
             self.app.set_shadow(shadow_val)
 
         self.app.push_active_shadow_file()
 
         if self.app.pubg_package == "com.pubg.krmobile" and self.ui.resolution_btn.isChecked():
             self.app.kr_fullhd()
-        else:
+        # Only start app if connected and package exists
+        elif self.app.pubg_package:
             self.app.start_app()
 
         self.task_completed.emit()
@@ -47,14 +50,12 @@ class ConnectWorkerThread(QThread):
     task_completed = pyqtSignal()
 
     def __init__(self, window, ui):
-
         super(ConnectWorkerThread, self).__init__()
         self.app = window
         self.ui = ui
 
     def get_active_file(self, pubg_version):
         """ Get the active file for the given PUBG version """
-
         pubg_package = next(key for key, value in self.app.pubg_versions.items() if value == pubg_version)
         self.app.get_graphics_file(pubg_package)
 
@@ -109,120 +110,123 @@ class ConnectWorkerThread(QThread):
 
 
 class GFX(QObject):
-
     def __init__(self, window):
         super(GFX, self).__init__()
-
         self.ui = window.ui
         self.app = window
+        
+        # Critical: Populate button lists during initialization to prevent crashes in System Optimizer
+        self.graphics_buttons = [
+            self.ui.super_smooth_graphics_btn,
+            self.ui.smooth_graphics_btn,
+            self.ui.balanced_graphics_btn,
+            self.ui.hd_graphics_btn,
+            self.ui.hdr_graphics_btn,
+            self.ui.ultrahd_graphics_btn,
+        ]
+        self.fps_buttons = [
+            self.ui.low_fps_btn,
+            self.ui.medium_fps_btn,
+            self.ui.high_fps_btn,
+            self.ui.ultra_fps_btn,
+            self.ui.extreme_fps_btn,
+            self.ui.fps90_fps_btn,
+            self.ui.fps120_fps_btn
+        ]
+        self.style_buttons = [
+            self.ui.classic_style_btn,
+            self.ui.colorful_style_btn,
+            self.ui.realistic_style_btn,
+            self.ui.soft_style_btn,
+            self.ui.movie_style_btn
+        ]
+        self.shadow_buttons = [
+            self.ui.disable_shadow_btn,
+            self.ui.enable_shadow_btn
+        ]
 
         self.graphics_buttons_func()
         self.fps_buttons_func()
         self.style_buttons_func()
-        self.shadow_buttons = [self.ui.disable_shadow_btn, self.ui.enable_shadow_btn]
 
-        # Hide Labels and Buttons in UI
+        # UI Initialization
         self.ui.ResolutionkrFrame.hide()
         self.ui.PubgchooseFrame.hide()
         self.gfx_buttons(enabled=False)
 
-        # Button connections
+        # Signal Connections
         self.ui.connect_gameloop_btn.clicked.connect(self.connect_gameloop_button_click)
         self.ui.submit_gfx_btn.clicked.connect(self.gfx_submit_button_click)
         
-        # Shadow button connections
         self.ui.disable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.disable_shadow_btn))
         self.ui.enable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.enable_shadow_btn))
 
-        # Profile connections
         if hasattr(self.ui, "save_profile_btn"):
             self.ui.save_profile_btn.clicked.connect(self.save_profile)
         if hasattr(self.ui, "load_profile_btn"):
             self.ui.load_profile_btn.clicked.connect(self.load_profile)
 
-    def call_app(self):
-        """Reference to the main application window."""
-        return self.app
-
-
     def gfx_submit_button_click(self):
-
         self.ui.submit_gfx_btn.setEnabled(False)
         self.worker_submit = SubmitWorkerThread(self.app, self.ui, self)
         self.worker_submit.task_completed.connect(self.submit_gfx_done)
         self.worker_submit.start()
 
     def save_profile(self):
-        import json
-        import os
-        
-        # Determine current selections
-        checked_graphics = next((b.text() for b in getattr(self, 'graphics_buttons', []) if b.isChecked()), "")
-        checked_fps = next((b.text() for b in getattr(self, 'fps_buttons', []) if b.isChecked()), "")
-        checked_style = next((b.property("styleId") for b in getattr(self, 'style_buttons', []) if b.isChecked()), "")
-        checked_shadow = next((b.text() for b in getattr(self, 'shadow_buttons', []) if b.isChecked()), "")
+        # Determine selections using objectName for image-based buttons
+        checked_graphics = next((b.objectName() for b in self.graphics_buttons if b.isChecked()), "")
+        checked_fps = next((b.objectName() for b in self.fps_buttons if b.isChecked()), "")
+        checked_style = next((b.objectName() for b in self.style_buttons if b.isChecked()), "")
+        checked_shadow = next((b.objectName() for b in self.shadow_buttons if b.isChecked()), "")
         
         if not any([checked_graphics, checked_fps, checked_style]):
-            self.app.show_status_message("Select some settings first to save a profile.")
+            self.app.show_status_message("Select settings first before saving.")
             return
             
         prof = {
-            "graphics": checked_graphics,
-            "fps": checked_fps,
-            "style": checked_style.decode('utf-8') if isinstance(checked_style, bytes) else checked_style,
-            "shadow": checked_shadow
+            "graphics_btn": checked_graphics,
+            "fps_btn": checked_fps,
+            "style_btn": checked_style,
+            "shadow_btn": checked_shadow
         }
         
-        profile_path = os.path.join(os.path.dirname(sys.executable), "nitro_profile.json") if getattr(sys, 'frozen', False) else "nitro_profile.json"
-        
+        profile_path = os.path.join(os.path.expanduser("~"), "Documents", "nitro_config_v2.json")
         try:
             with open(profile_path, "w") as f:
                 json.dump(prof, f)
-            self.app.show_status_message("✅ PROFILE SAVED SUCCESSFULLY! Portable config stored.", 5)
+            self.app.show_status_message(f"✅ PROFILE SAVED IN DOCUMENTS!", 5)
         except Exception:
-            self.app.show_status_message("Failed to save profile. Try running as admin.")
+            self.app.show_status_message("Error saving profile. check permissions.")
 
     def load_profile(self):
-        import json
-        profile_path = os.path.join(os.path.dirname(sys.executable), "nitro_profile.json") if getattr(sys, 'frozen', False) else "nitro_profile.json"
+        profile_path = os.path.join(os.path.expanduser("~"), "Documents", "nitro_config_v2.json")
         if not os.path.exists(profile_path):
-            self.app.show_status_message("No saved custom profile found in app folder.")
+            self.app.show_status_message("No custom profile found.")
             return
             
         try:
             with open(profile_path, "r") as f:
                 prof = json.load(f)
                 
-            # Apply to UI
-            if "graphics" in prof and hasattr(self, 'graphics_buttons'):
-                for b in self.graphics_buttons:
-                    b.setChecked(b.text() == prof["graphics"])
+            mapping = {
+                "graphics_btn": self.graphics_buttons,
+                "fps_btn": self.fps_buttons,
+                "style_btn": self.style_buttons,
+                "shadow_btn": self.shadow_buttons
+            }
+            
+            for key, btn_list in mapping.items():
+                if key in prof and prof[key]:
+                    for b in btn_list:
+                        b.setChecked(b.objectName() == prof[key])
                     
-            if "fps" in prof and hasattr(self, 'fps_buttons'):
-                for b in self.fps_buttons:
-                    b.setChecked(b.text() == prof["fps"])
-                    
-            if "style" in prof and hasattr(self, 'style_buttons'):
-                for b in self.style_buttons:
-                    b_style = b.property("styleId")
-                    b_style = b_style.decode('utf-8') if isinstance(b_style, bytes) else b_style
-                    b.setChecked(b_style == prof["style"])
-                    
-            if "shadow" in prof and hasattr(self, 'shadow_buttons'):
-                for b in self.shadow_buttons:
-                    b.setChecked(b.text() == prof["shadow"])
-                    
-            self.app.show_status_message("📂 PROFILE LOADED! Press 'Submit' to apply these settings.", 6)
+            self.app.show_status_message("📂 PROFILE LOADED! Press 'Submit' to apply.", 6)
         except Exception:
-            self.app.show_status_message("Failed to load profile. The file might be corrupted.")
+            self.app.show_status_message("Failed to load profile.")
 
     def submit_gfx_done(self):
         self.ui.submit_gfx_btn.setEnabled(True)
-        if self.app.pubg_package == "com.pubg.krmobile" and self.ui.resolution_btn.isChecked():
-            status_message = "Graphics settings applied, resolution set to 1080p."
-        else:
-            status_message = "Graphics settings applied successfully."
-        self.app.show_status_message(status_message)
+        self.app.show_status_message("Graphics settings applied successfully!")
 
     def connect_gameloop_button_click(self, checked: bool):
         if checked:
@@ -238,135 +242,45 @@ class GFX(QObject):
             self.ui.PubgchooseFrame.hide()
             self.app.kill_adb()
             self.ui.connect_gameloop_btn.setText("Connect to GameLoop")
-            self.app.show_status_message("Disconnected from GameLoop", 3)
-
-    def use_pubg_version(self):
-        val = self.ui.pubgchoose_dropdown.currentText()
-        pubg_package = next(k for k, v in self.app.pubg_versions.items() if v == val)
-        self.app.get_graphics_file(pubg_package)
-        self.ui.connect_gameloop_btn.setText("Connected")
-        self.app.show_status_message(f"Using version {val}", 3)
-        self.ui.PubgchooseFrame.hide()
-        self.connect_gameloop_task_completed(checked=False)
+            self.app.show_status_message("Disconnected.")
 
     def connect_gameloop_task_completed(self, checked: bool = True):
-        if not self.app.is_adb_working:
-            self.ui.connect_gameloop_btn.setEnabled(True)
-            return
-        if checked:
-            if len(self.app.PUBG_Found) > 1:
-                self.ui.pubgchoose_btn.clicked.connect(self.use_pubg_version)
-                return
         self.ui.connect_gameloop_btn.setEnabled(True)
+        if not self.app.is_adb_working:
+            return
 
-        self.graphics_buttons = [
-            self.ui.super_smooth_graphics_btn,
-            self.ui.smooth_graphics_btn,
-            self.ui.balanced_graphics_btn,
-            self.ui.hd_graphics_btn,
-            self.ui.hdr_graphics_btn,
-            self.ui.ultrahd_graphics_btn,
-        ]
-        self.graphics_value = self.app.get_graphics_setting()
+        # Synchronize UI with current game settings
+        graphics_val = self.app.get_graphics_setting()
+        for b in self.graphics_buttons:
+            if b.text() == graphics_val: b.setChecked(True)
 
-        for button in self.graphics_buttons:
-            if button.text() == self.graphics_value:
-                button.setChecked(True)
-                break
+        fps_val = self.app.get_fps()
+        for b in self.fps_buttons:
+            if b.text() == fps_val: b.setChecked(True)
 
-        self.fps_buttons = [
-            self.ui.low_fps_btn,
-            self.ui.medium_fps_btn,
-            self.ui.high_fps_btn,
-            self.ui.ultra_fps_btn,
-            self.ui.extreme_fps_btn,
-            self.ui.fps90_fps_btn,
-            self.ui.fps120_fps_btn
-        ]
-        self.fps_value = self.app.get_fps()
+        style_val = self.app.get_graphics_style()
+        for b in self.style_buttons:
+            if style_val.lower() in b.objectName().lower(): b.setChecked(True)
 
-        for button in self.fps_buttons:
-            if button.text() == self.fps_value:
-                button.setChecked(True)
-                break
-
-        self.style_buttons = [
-            self.ui.classic_style_btn,
-            self.ui.colorful_style_btn,
-            self.ui.realistic_style_btn,
-            self.ui.soft_style_btn,
-            self.ui.movie_style_btn
-        ]
-        battle_style_dict = {
-            b'\x01': "Classic",
-            b'\x02': "Colorful",
-            b'\x03': "Realistic",
-            b'\x04': "Soft",
-            b'\x06': "Movie"
-        }
-
-        for button, style_id in zip(self.style_buttons, battle_style_dict.values()):
-            button.setProperty("styleId", style_id)
-
-        self.style_value = self.app.get_graphics_style()
-
-        for button in self.style_buttons:
-            if self.style_value.lower() in button.objectName():
-                button.setChecked(True)
-                break
-
-        self.shadow_buttons = [
-            self.ui.disable_shadow_btn,
-            self.ui.enable_shadow_btn
-        ]
-        self.shadow_value = self.app.get_shadow()
-
-        for button in self.shadow_buttons:
-            if button.text() == self.shadow_value:
-                button.setChecked(True)
-                break
-
-        if self.app.pubg_package == "com.pubg.krmobile":
-            self.ui.ResolutionkrFrame.setVisible(True)
-            self.ui.resolution_btn.setChecked(True)
+        shadow_val = self.app.get_shadow()
+        for b in self.shadow_buttons:
+            is_enabled = "enable" in b.objectName().lower()
+            if (shadow_val == "ON" and is_enabled) or (shadow_val != "ON" and not is_enabled):
+                b.setChecked(True)
 
         self.gfx_buttons(enabled=True)
 
     def graphics_buttons_func(self):
-        buttons = [
-            self.ui.super_smooth_graphics_btn,
-            self.ui.smooth_graphics_btn,
-            self.ui.balanced_graphics_btn,
-            self.ui.hd_graphics_btn,
-            self.ui.hdr_graphics_btn,
-            self.ui.ultrahd_graphics_btn
-        ]
-        for button in buttons:
-            button.clicked.connect(lambda checked, btn=button: self.check_button_selected(buttons, btn))
+        for button in self.graphics_buttons:
+            button.clicked.connect(lambda checked, btn=button: self.check_button_selected(self.graphics_buttons, btn))
 
     def fps_buttons_func(self):
-        buttons = [
-            self.ui.low_fps_btn,
-            self.ui.medium_fps_btn,
-            self.ui.high_fps_btn,
-            self.ui.ultra_fps_btn,
-            self.ui.extreme_fps_btn,
-            self.ui.fps90_fps_btn,
-            self.ui.fps120_fps_btn
-        ]
-        for button in buttons:
-            button.clicked.connect(lambda checked, btn=button: self.check_button_selected(buttons, btn))
+        for button in self.fps_buttons:
+            button.clicked.connect(lambda checked, btn=button: self.check_button_selected(self.fps_buttons, btn))
 
     def style_buttons_func(self):
-        buttons = [
-            self.ui.classic_style_btn,
-            self.ui.colorful_style_btn,
-            self.ui.realistic_style_btn,
-            self.ui.soft_style_btn,
-            self.ui.movie_style_btn
-        ]
-        for button in buttons:
-            button.clicked.connect(lambda checked, btn=button: self.check_button_selected(buttons, btn))
+        for button in self.style_buttons:
+            button.clicked.connect(lambda checked, btn=button: self.check_button_selected(self.style_buttons, btn))
 
     @staticmethod
     def check_button_selected(buttons, clicked_button):
@@ -374,31 +288,8 @@ class GFX(QObject):
             button.setChecked(button is clicked_button)
 
     def gfx_buttons(self, enabled: bool):
-        buttons = [
-            self.ui.super_smooth_graphics_btn,
-            self.ui.smooth_graphics_btn,
-            self.ui.balanced_graphics_btn,
-            self.ui.hd_graphics_btn,
-            self.ui.hdr_graphics_btn,
-            self.ui.ultrahd_graphics_btn,
-            self.ui.low_fps_btn,
-            self.ui.medium_fps_btn,
-            self.ui.high_fps_btn,
-            self.ui.ultra_fps_btn,
-            self.ui.extreme_fps_btn,
-            self.ui.fps90_fps_btn,
-            self.ui.fps120_fps_btn,
-            self.ui.classic_style_btn,
-            self.ui.colorful_style_btn,
-            self.ui.realistic_style_btn,
-            self.ui.soft_style_btn,
-            self.ui.movie_style_btn,
-            self.ui.disable_shadow_btn,
-            self.ui.enable_shadow_btn,
-            self.ui.submit_gfx_btn
-        ]
-
-        for button in buttons:
+        all_interactive = self.graphics_buttons + self.fps_buttons + self.style_buttons + self.shadow_buttons + [self.ui.submit_gfx_btn]
+        for button in all_interactive:
             button.setEnabled(enabled)
             if not enabled:
-                button.setChecked(enabled)
+                button.setChecked(False)
