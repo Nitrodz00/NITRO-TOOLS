@@ -2,6 +2,7 @@ import os
 import requests
 import json
 from threading import Thread
+from PyQt5 import QtCore, QtWidgets, QtGui
 from .app_functions import Game
 from .gfx import GFX
 from .other import Other
