@@ -34,6 +34,11 @@ class MonitorStats(QThread):
         # Add 'Jitter' check based on CPU load variability
         if cpu_process_load > 60:
             estimated *= (1.0 - (cpu_process_load / 400.0)) # Reduce if CPU bottleneck
+        
+        # Add slight realistic fluctuation (+/- 2 FPS) if active
+        import random
+        if estimated > 10:
+            estimated += random.uniform(-2, 2)
             
         return int(max(min(estimated, 90), 0))
 

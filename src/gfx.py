@@ -26,6 +26,13 @@ class SubmitWorkerThread(QThread):
             self.app.set_graphics_style(checked_style_button.property("styleId"))
 
         self.app.save_graphics_file()
+        
+        # Handle Shadow Setting
+        checked_shadow_button = next((button for button in self.gfx.shadow_buttons if button.isChecked()), None)
+        if checked_shadow_button:
+            shadow_val = "ON" if "Enable" in checked_shadow_button.text() else "OFF"
+            self.app.set_shadow(shadow_val)
+
         self.app.push_active_shadow_file()
 
         if self.app.pubg_package == "com.pubg.krmobile" and self.ui.resolution_btn.isChecked():
@@ -127,6 +134,11 @@ class GFX(QObject):
         # Button connections
         self.ui.connect_gameloop_btn.clicked.connect(self.connect_gameloop_button_click)
         self.ui.submit_gfx_btn.clicked.connect(self.gfx_submit_button_click)
+        
+        # Shadow button connections
+        self.shadow_buttons = [self.ui.disable_shadow_btn, self.ui.enable_shadow_btn]
+        self.ui.disable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.disable_shadow_btn))
+        self.ui.enable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.enable_shadow_btn))
 
     def gfx_submit_button_click(self):
 
@@ -312,8 +324,8 @@ class GFX(QObject):
             self.ui.realistic_style_btn,
             self.ui.soft_style_btn,
             self.ui.movie_style_btn,
-            # self.ui.disable_shadow_btn,
-            # self.ui.enable_shadow_btn,
+            self.ui.disable_shadow_btn,
+            self.ui.enable_shadow_btn,
             self.ui.submit_gfx_btn
         ]
 

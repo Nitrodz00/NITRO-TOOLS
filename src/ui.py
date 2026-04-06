@@ -1053,17 +1053,15 @@ class Ui_MainWindow(object):
                                                                      "                                <li>iPad view for an immersive gaming experience.</li>\n"
                                                                      "                                </ul>\n"
                                                                      "\n"
-                                                                     "                                <h3>Contact Me:</h3>\n"
+                                                                     "                                <h3>Support:</h3>\n"
                                                                      "                                <ul>\n"
-                                                                     "                                <li>GitHub: <a href=\"ht"
-                                                                     "tps://github.com/NITROTOOLS\">https://github.com/NITROTOOLS</a></li>\n"
-                                                                     "                                <li>Discord Community: <a href=\"https://discord.gg/PDPJM6e6PC\">https://discord.gg/PDPJM6e6PC</a></li>\n"
+                                                                     "                                <li>GitHub: <a href=\"https://github.com/Nitrodz00/NITRO-TOOLS\">https://github.com/Nitrodz00/NITRO-TOOLS</a></li>\n"
                                                                      "                                </ul>\n"
                                                                      "                                <center>\n"
                                                                      "                                <p>Level up your gaming experience today!</p>\n"
                                                                      "                                </center>\n"
                                                                      "                            ", None))
-            self.appname_label.setText(QCoreApplication.translate("MainWindow", u"NITROTOOLS PUBG MOBILE v1.0.0", None))
+            self.appname_label.setText(QCoreApplication.translate("MainWindow", u"NITROTOOLS PUBG MOBILE v2.1.9", None))
             self.appstatus_label.setText(QCoreApplication.translate("MainWindow", u"Status:", None))
             self.appstatus_text_lable.setText("")
             self.close_btn.setText(QCoreApplication.translate("MainWindow", u"X", None))

@@ -112,6 +112,61 @@ class Optimizer(Registry):
         except Exception:
             pass
 
+    def set_process_priority(self, process_name, priority="high"):
+        """Sets the CPU priority for a specific process (e.g., AndroidEmulatorEn.exe)"""
+        priority_map = {
+            "high": psutil.HIGH_PRIORITY_CLASS,
+            "above_normal": psutil.ABOVE_NORMAL_PRIORITY_CLASS,
+            "realtime": psutil.REALTIME_PRIORITY_CLASS
+        }
+        try:
+            for proc in psutil.process_iter(['name']):
+                if proc.info['name'].lower() == process_name.lower():
+                    p = psutil.Process(proc.pid)
+                    p.nice(priority_map.get(priority, psutil.HIGH_PRIORITY_CLASS))
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to set priority for {process_name}: {str(e)}")
+            return False
+
+    def set_cpu_affinity(self, process_name, cores=None):
+        """Sets CPU affinity for a process (e.g., only use cores 4,5,6,7 to avoid OS jitter)"""
+        try:
+            for proc in psutil.process_iter(['name']):
+                if proc.info['name'].lower() == process_name.lower():
+                    p = psutil.Process(proc.pid)
+                    if cores is None:
+                        # Default: Use all cores
+                        p.cpu_affinity(list(range(psutil.cpu_count())))
+                    else:
+                        p.cpu_affinity(cores)
+            return True
+        except Exception as e:
+            self.logger.error(f"Affinity Error: {str(e)}")
+            return False
+
+    def set_high_performance_power_plan(self):
+        """Activates the High Performance power plan in Windows"""
+        try:
+            subprocess.run(["powercfg", "/setactive", "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"], 
+                           check=True, creationflags=CREATE_NO_WINDOW)
+            return True
+        except:
+            return False
+
+    def set_ultimate_performance_power_plan(self):
+        """Unlocks and activates the Ultimate Performance power plan (Windows 10/11)"""
+        try:
+            # Unhide/Unlock Ultimate Performance scheme
+            subprocess.run(["powercfg", "-duplicatescheme", "e9a42b02-d5df-448d-aa00-03f14749eb61"], 
+                           capture_output=True, creationflags=CREATE_NO_WINDOW)
+            # Activate it
+            subprocess.run(["powercfg", "/setactive", "e9a42b02-d5df-448d-aa00-03f14749eb61"], 
+                           check=True, creationflags=CREATE_NO_WINDOW)
+            return True
+        except:
+            return False
+
     def temp_cleaner(self):
         """
         Cleans temporary files and directories.
@@ -792,9 +847,17 @@ class Game(Optimizer):
 
     @staticmethod
     def is_gameloop_running():
-        running_process_list = subprocess.check_output(["tasklist"], creationflags=CREATE_NO_WINDOW)
-        emulator_processes = [b"AndroidEmulatorEx.exe", b"AndroidEmulatorEn.exe", b"AndroidEmulator.exe"]
-        return any(process in running_process_list for process in emulator_processes)
+        """
+        Efficiently checks if GameLoop is running using psutil.
+        """
+        emulator_processes = ["androidemulatorex.exe", "androidemulatoren.exe", "androidemulator.exe"]
+        for proc in psutil.process_iter(['name']):
+            try:
+                if proc.info['name'].lower() in emulator_processes:
+                    return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+                pass
+        return False
 
     def check_adb_connection(self, first_check=True):
         """
@@ -1088,6 +1151,48 @@ class Game(Optimizer):
             return True
         except Exception as e:
             self.logger.error(f"Push Files Error: {str(e)}")
+            return False
+
+    def clear_standby_list(self):
+        """
+        Clears the system standby list (RAM cache) to reduce stuttering.
+        Uses EmptyWorkingSet for all processes.
+        """
+        try:
+            import ctypes
+            # Requires SeProfileSingleProcessPrivilege which we likely have as Admin
+            # We'll use the PSUTIL approach for safer handling of all processes
+            for proc in psutil.process_iter():
+                try:
+                    p = psutil.Process(proc.pid)
+                    p.memory_info() # Check access
+                    # Note: EmptyWorkingSet is the WinAPI call
+                    ctypes.windll.psapi.EmptyWorkingSet(int(p._handle))
+                except:
+                    continue
+            return True
+        except Exception as e:
+            self.logger.error(f"RAM Cleaner Error: {str(e)}")
+            return False
+
+    def ping_stabilizer(self, enable=True):
+        """
+        Disables Windows Update and background data services to stabilize ping.
+        """
+        services = ["wuauserv", "bits", "DoSvc"]
+        action = "stop" if enable else "start"
+        status = "DISABLED" if enable else "ENABLED"
+        
+        try:
+            for svc in services:
+                subprocess.run(["sc", action, svc], creationflags=CREATE_NO_WINDOW)
+                if enable:
+                    subprocess.run(["sc", "config", svc, "start=disabled"], creationflags=CREATE_NO_WINDOW)
+                else:
+                    subprocess.run(["sc", "config", svc, "start=demand"], creationflags=CREATE_NO_WINDOW)
+            return True
+        except Exception as e:
+            self.logger.error(f"Ping Stabilizer Error: {str(e)}")
             return False
 
     def start_app(self):

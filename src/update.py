@@ -60,7 +60,7 @@ class CheckUpdateThread(QThread):
     - On success: either shows update dialog or opens the main app.
     - On failure (timeout, DNS, 404, no assets): emits check_failed or no_update; app still opens.
     """
-    update_available = pyqtSignal(str, str, str)   # latest_version, download_url, asset_name
+    update_available = pyqtSignal(str, str, str, str, str)   # latest_version, download_url, asset_name, size, changelog
     no_update = pyqtSignal()
     check_failed = pyqtSignal()
 
@@ -81,20 +81,23 @@ class CheckUpdateThread(QThread):
             if response.status_code == 200:
                 data = response.json()
                 latest_version = data.get("tag_name", "")
+                changelog = data.get("body", "No changelog provided.")
                 assets = data.get("assets", [])
                 cur = self._normalize_version(self.current_version)
                 lat = self._normalize_version(latest_version)
                 if latest_version and lat != cur and assets:
                     asset = assets[0]
+                    size_mb = round(asset.get("size", 0) / (1024 * 1024), 2)
                     self.update_available.emit(
                         latest_version,
                         asset.get("browser_download_url", ""),
-                        asset.get("name", "")
+                        asset.get("name", ""),
+                        f"{size_mb} MB",
+                        changelog
                     )
                 else:
                     self.no_update.emit()
             else:
-                # e.g. 404 if no releases published, or 403 rate limit
                 self.check_failed.emit()
         except Exception:
             self.check_failed.emit()
@@ -105,18 +108,20 @@ class UpdateWindow(QMainWindow):
 
     window_closed = pyqtSignal()
 
-    def __init__(self, latest_version, download_url, asset_name):
+    def __init__(self, latest_version, download_url, asset_name, size, changelog):
         super().__init__()
         self.latest_version = latest_version
         self.download_url = download_url
         self.asset_name = asset_name
+        self.size = size
+        self.changelog = changelog
         self.download_thread = None
 
         icon = QIcon()
         icon.addFile(resource_path(r"assets\icons\logo.ico"), QSize(), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         self.setWindowTitle("NITROTOOLS — Update Available")
-        self.setFixedSize(400, 220)
+        self.setFixedSize(500, 480) # Increased for changelog
 
         # Center on screen
         screen_geometry = QApplication.desktop().screenGeometry()
@@ -126,37 +131,52 @@ class UpdateWindow(QMainWindow):
         )
 
         self.label = QLabel(f"🚀 New version available: <b>{latest_version}</b>")
-        self.label.setStyleSheet("font-size: 14px; padding: 10px;")
+        self.label.setStyleSheet("font-size: 16px; color: #ff00ff; padding-top: 10px;")
 
-        self.sublabel = QLabel("Do you want to download and install the update now?")
-        self.sublabel.setWordWrap(True)
-        self.sublabel.setStyleSheet("color: #aaa; padding: 0 10px;")
+        self.sublabel = QLabel("What's New in this version:")
+        self.sublabel.setStyleSheet("color: #ffffff; font-weight: bold; margin-top: 5px;")
+
+        from PyQt5.QtWidgets import QTextEdit
+        self.changelog_box = QTextEdit()
+        self.changelog_box.setReadOnly(True)
+        self.changelog_box.setPlainText(self.changelog)
+        self.changelog_box.setStyleSheet("background: #111; color: #00ffca; border: 1px solid #333; border-radius: 4px; padding: 5px;")
+
+        self.size_label = QLabel(f"📦 Size: {self.size}")
+        self.size_label.setStyleSheet("color: #aaaaaa; font-weight: bold;")
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         self.progress_bar.setStyleSheet(
-            "QProgressBar { border: 1px solid #cc0000; border-radius: 4px; height: 16px; }"
-            "QProgressBar::chunk { background-color: #cc0000; }"
+            "QProgressBar { border: 1px solid #ff00ff; border-radius: 4px; height: 16px; }"
+            "QProgressBar::chunk { background-color: #ff00ff; }"
         )
 
-        self.update_btn = QPushButton("⬇ Download Update")
-        self.update_btn.setFixedHeight(38)
+        self.update_btn = QPushButton("⬇ Download and Apply Update")
+        self.update_btn.setFixedHeight(45)
+        self.update_btn.setStyleSheet("background: #ff00ff; color: white; font-weight: 800; border-radius: 5px;")
+        
         self.skip_btn = QPushButton("Skip — Open Tool")
-        self.skip_btn.setFixedHeight(38)
+        self.skip_btn.setFixedHeight(45)
+        self.skip_btn.setStyleSheet("background: transparent; border: 1px solid #aaa; color: #aaa;")
 
         btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
         btn_layout.addWidget(self.update_btn)
         btn_layout.addWidget(self.skip_btn)
 
         layout = QVBoxLayout()
-        layout.setSpacing(8)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
         layout.addWidget(self.label)
         layout.addWidget(self.sublabel)
+        layout.addWidget(self.changelog_box)
+        layout.addWidget(self.size_label)
         layout.addWidget(self.progress_bar)
         layout.addLayout(btn_layout)
 
         widget = QWidget()
+        widget.setStyleSheet("background-color: #0b001a;")
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
@@ -167,7 +187,7 @@ class UpdateWindow(QMainWindow):
         self.update_btn.setEnabled(False)
         self.skip_btn.setEnabled(False)
         self.progress_bar.setVisible(True)
-        self.sublabel.setText("Downloading update...")
+        self.label.setText("⬇ Downloading update...")
 
         self.download_thread = DownloadThread(self.download_url, self.asset_name)
         self.download_thread.download_progress.connect(self.progress_bar.setValue)
@@ -176,11 +196,12 @@ class UpdateWindow(QMainWindow):
         self.download_thread.start()
 
     def on_complete(self):
-        self.sublabel.setText("✅ Update downloaded! Restarting...")
+        self.label.setText("✅ Update downloaded! Restarting...")
+        # Start the updater/installer if necessary, but here we just restart
         QTimer.singleShot(1500, sys.exit)
 
     def on_failed(self, msg):
-        self.sublabel.setText(f"❌ Failed: {msg}")
+        self.label.setText(f"❌ Failed: {msg}")
         self.update_btn.setEnabled(True)
         self.skip_btn.setEnabled(True)
         self.progress_bar.setVisible(False)

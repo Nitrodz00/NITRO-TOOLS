@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.1.8"
+APP_VERSION = "v2.1.9"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -165,9 +165,9 @@ _update_checker = None
 _single_instance_lock = None
 
 
-def on_update_available(latest_version, download_url, asset_name):
+def on_update_available(latest_version, download_url, asset_name, size, changelog):
     global _update_window
-    _update_window = UpdateWindow(latest_version, download_url, asset_name)
+    _update_window = UpdateWindow(latest_version, download_url, asset_name, size, changelog)
     _update_window.window_closed.connect(run_application)
     _update_window.show()
 
@@ -197,6 +197,20 @@ if __name__ == "__main__":
     environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
     environ["QT_SCREEN_SCALE_FACTORS"] = "1"
     environ["QT_SCALE_FACTOR"] = "1"
+
+    def is_admin():
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+
+    if not is_admin():
+        # Re-run the program with admin rights
+        try:
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        except Exception:
+            pass
+        sys.exit(0)
 
     app = QtWidgets.QApplication(sys.argv)
     
