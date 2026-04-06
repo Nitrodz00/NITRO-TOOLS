@@ -154,19 +154,13 @@ class Optimizer(Registry):
     def set_ultimate_performance_power_plan(self):
         """Unlocks and activates the Ultimate Performance power plan (Windows 10/11)"""
         try:
-            subprocess.run(["powercfg", "-duplicatescheme", "e9a42b02-d5df-448d-aa00-03f14749eb61"], capture_output=True, creationflags=CREATE_NO_WINDOW)
-            subprocess.run(["powercfg", "/setactive", "e9a42b02-d5df-448d-aa00-03f14749eb61"], creationflags=CREATE_NO_WINDOW)
-            output = subprocess.check_output(["powercfg", "/getactivescheme"], creationflags=CREATE_NO_WINDOW).decode('utf-8', errors='ignore')
-            if "Ultimate" in output or "الفائق" in output:
-                return True
-            import re
-            l_out = subprocess.check_output(["powercfg", "/L"], creationflags=CREATE_NO_WINDOW).decode('utf-8', errors='ignore')
-            m = re.search(r"([a-f0-9\-]{36}).*(Ultimate|الفائق)", l_out, re.IGNORECASE)
-            if m:
-                subprocess.run(["powercfg", "/setactive", m.group(1)], check=True, creationflags=CREATE_NO_WINDOW)
-                return True
-            return False
-
+            # Unhide/Unlock Ultimate Performance scheme
+            subprocess.run(["powercfg", "-duplicatescheme", "e9a42b02-d5df-448d-aa00-03f14749eb61"], 
+                           capture_output=True, creationflags=CREATE_NO_WINDOW)
+            # Activate it
+            subprocess.run(["powercfg", "/setactive", "e9a42b02-d5df-448d-aa00-03f14749eb61"], 
+                           check=True, creationflags=CREATE_NO_WINDOW)
+            return True
         except:
             return False
 
