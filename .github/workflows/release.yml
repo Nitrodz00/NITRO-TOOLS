@@ -36,13 +36,13 @@ jobs:
           $ref = $env:GITHUB_REF
           if ($ref -match '^refs/tags/v') {
             $tag = $ref -replace '^refs/tags/',''
-            $exe = "NITROTOOLS_PUBG_MOBILE_$tag"
+            $exe = "NITROTOOLS_PUBG_MOBILE"
             echo "exe_name=$exe" >> $env:GITHUB_OUTPUT
             echo "is_release=true" >> $env:GITHUB_OUTPUT
           } else {
             $line = Select-String -Path main.py -Pattern 'APP_VERSION = "([^"]+)"'
             $v = $line.Matches.Groups[1].Value
-            $exe = "NITROTOOLS_PUBG_MOBILE_$v"
+            $exe = "NITROTOOLS_PUBG_MOBILE"
             echo "exe_name=$exe" >> $env:GITHUB_OUTPUT
             echo "is_release=false" >> $env:GITHUB_OUTPUT
           }
