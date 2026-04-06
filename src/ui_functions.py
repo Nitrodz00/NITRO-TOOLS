@@ -166,28 +166,47 @@ class Window(QtWidgets.QMainWindow, Game):
         """Fix hardcoded UI overlaps from the .ui file."""
         try:
             # 1. Increase Frame Heights to prevent clipping
-            self.ui.GraphicsFrame.setMinimumHeight(110)
-            self.ui.FramerateFrame.setMinimumHeight(110)
-            self.ui.ShadowFrame.setMinimumHeight(110)
+            self.ui.GraphicsFrame.setMinimumHeight(130)
+            self.ui.FramerateFrame.setMinimumHeight(130)
+            self.ui.ShadowFrame.setMinimumHeight(130)
+            self.ui.StyleFrame.setMinimumHeight(240)
             
             # 2. Add Spacing to the main GFX grid
             if hasattr(self.ui, 'gridLayout'):
-                self.ui.gridLayout.setVerticalSpacing(25)
+                self.ui.gridLayout.setVerticalSpacing(40)  # Increased from 25
                 self.ui.gridLayout.setHorizontalSpacing(30)
-                self.ui.gridLayout.setContentsMargins(15, 15, 15, 15)
-
-            # 3. Position elements SAFELY inside their respective frames
+                self.ui.gridLayout.setContentsMargins(20, 20, 20, 20)
+            
+            # Position elements SAFELY inside their respective frames with safe font sizes
+            label_style = "color: #ffffff; font-weight: bold; background: transparent;"
+            
             # Graphics
-            if hasattr(self.ui, 'graphics_label'): self.ui.graphics_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
-            if hasattr(self.ui, 'layoutWidget'): self.ui.layoutWidget.setGeometry(QtCore.QRect(10, 50, 1050, 45))
+            if hasattr(self.ui, 'graphics_label'): 
+                self.ui.graphics_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
+                self.ui.graphics_label.setStyleSheet(label_style + "font-size: 24px;")
+            if hasattr(self.ui, 'layoutWidget'): 
+                self.ui.layoutWidget.setGeometry(QtCore.QRect(10, 60, 1050, 45))
             
             # Framerate
-            if hasattr(self.ui, 'fps_label'): self.ui.fps_label.setGeometry(QtCore.QRect(10, 5, 200, 35))
-            if hasattr(self.ui, 'layoutWidget1'): self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 50, 1050, 45))
+            if hasattr(self.ui, 'fps_label'): 
+                self.ui.fps_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
+                self.ui.fps_label.setStyleSheet(label_style + "font-size: 24px;")
+            if hasattr(self.ui, 'layoutWidget1'): 
+                self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 60, 1050, 45))
 
-            # Shadow (Fixed naming: layoutWidget_2 instead of layoutWidget3)
-            if hasattr(self.ui, 'shadow_label'): self.ui.shadow_label.setGeometry(QtCore.QRect(10, 10, 200, 35))
-            if hasattr(self.ui, 'layoutWidget_2'): self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 60, 300, 45))
+            # Shadow
+            if hasattr(self.ui, 'shadow_label'): 
+                self.ui.shadow_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
+                self.ui.shadow_label.setStyleSheet(label_style + "font-size: 24px;")
+            if hasattr(self.ui, 'layoutWidget_2'): 
+                self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 70, 400, 45))
+            
+            # Resolution
+            if hasattr(self.ui, 'resolution_label'):
+                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
+                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 24px;")
+            if hasattr(self.ui, 'resolution_btn'):
+                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 70, 200, 45))
             
             # --- PROGRAMMATICALLY ADD SYSTEM PAGE ---
             if not hasattr(self.ui, 'system_page'):
@@ -196,7 +215,7 @@ class Window(QtWidgets.QMainWindow, Game):
                 
                 system_layout = QtWidgets.QVBoxLayout(self.ui.system_page)
                 system_layout.setContentsMargins(50, 50, 50, 50)
-                system_layout.setSpacing(30)
+                system_layout.setSpacing(25)
                 
                 title = QtWidgets.QLabel("System Optimization Pro")
                 title.setStyleSheet("font-size: 35px; color: #ffffff; font-weight: 800;")
@@ -205,9 +224,6 @@ class Window(QtWidgets.QMainWindow, Game):
                 desc = QtWidgets.QLabel("Boost your system stability and priority for maximum gaming performance.")
                 desc.setStyleSheet("color: #aaaaaa; font-size: 14px;")
                 system_layout.addWidget(desc)
-                
-                # Spacing and Title
-                spacer = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
                 
                 # High Priority Button
                 self.ui.high_priority_btn = QtWidgets.QPushButton("🚀 ACTIVATE HIGH PRIORITY (GAMELOOP)")
@@ -247,7 +263,7 @@ class Window(QtWidgets.QMainWindow, Game):
                 
                 self.ui.stackedWidget.addWidget(self.ui.system_page)
                 
-            # Add System Button to Sidebar
+            # Add System Button to Sidebar with correct style
             if not hasattr(self.ui, 'system_button'):
                 self.ui.system_button = QtWidgets.QPushButton("SYSTEM", self.ui.PagesFrame)
                 self.ui.system_button.setObjectName("system_button")

@@ -20,11 +20,17 @@ class DownloadThread(QThread):
 
     def run(self):
         try:
+            # Change the filename slightly to avoid 'Permission Denied' if the same EXE is running
+            if self.filename.lower().endswith(".exe"):
+                download_path = "NITRO_UPDATE_NEW.exe"
+            else:
+                download_path = self.filename
+
             response = requests.get(self.url, stream=True)
             if response.status_code == 200:
                 total_size = int(response.headers.get("content-length", 0))
                 bytes_downloaded = 0
-                with open(self.filename, "wb") as file:
+                with open(download_path, "wb") as file:
                     for chunk in response.iter_content(chunk_size=4096):
                         if chunk:
                             file.write(chunk)
@@ -32,8 +38,10 @@ class DownloadThread(QThread):
                             if total_size:
                                 progress = int((bytes_downloaded / total_size) * 100)
                                 self.download_progress.emit(progress)
-                if self.filename.endswith(".exe"):
-                    os.startfile(self.filename, 'runas')
+                
+                if download_path.endswith(".exe"):
+                    # Launch the new EXE
+                    os.startfile(download_path, 'runas')
                     self.download_complete.emit()
                     return
 
