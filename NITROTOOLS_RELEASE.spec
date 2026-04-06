@@ -56,15 +56,29 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'matplotlib',
-        'numpy',
         'pandas',
-        'scipy',
         'tkinter',
         'pytest',
     ],
     noarchive=False,
     optimize=0,
 )
+
+numpy_ret = collect_all('numpy')
+datas += numpy_ret[0]
+binaries += numpy_ret[1]
+hiddenimports += numpy_ret[2]
+
+scipy_ret = collect_all('scipy')
+datas += scipy_ret[0]
+binaries += scipy_ret[1]
+hiddenimports += scipy_ret[2]
+
+sklearn_ret = collect_all('sklearn')
+datas += sklearn_ret[0]
+binaries += sklearn_ret[1]
+hiddenimports += sklearn_ret[2]
+
 pyz = PYZ(a.pure)
 
 exe = EXE(

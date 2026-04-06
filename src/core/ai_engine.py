@@ -1,8 +1,14 @@
 import json
 import os
 from .optimizer import SystemOptimizer
-from sklearn.linear_model import LinearRegression
-import numpy as np
+
+try:
+    from sklearn.linear_model import LinearRegression
+    import numpy as np
+    SKLEARN_AVAILABLE = True
+except Exception:
+    SKLEARN_AVAILABLE = False
+    np = None
 
 class AIDynamicOptimizer:
     """
@@ -15,9 +21,11 @@ class AIDynamicOptimizer:
         self.performance_history = self._load_history()
         self.last_mode = "balanced"
         self.consecutive_stutter = 0
-        self.model = LinearRegression()
         self.trained = False
-        self._train_model()
+        self.model = None
+        if SKLEARN_AVAILABLE:
+            self.model = LinearRegression()
+            self._train_model()
 
     def _load_history(self):
         if os.path.exists(self.history_file):
@@ -44,6 +52,8 @@ class AIDynamicOptimizer:
                 # Simple features: cpu_load, gpu_load
                 X.append([data.get("cpu_load", 50), data.get("gpu_load", 50)])
                 y.append(data["best_fps"])
+        if not SKLEARN_AVAILABLE:
+            return
         if len(X) > 1:
             self.model.fit(np.array(X), np.array(y))
             self.trained = True
@@ -58,10 +68,10 @@ class AIDynamicOptimizer:
         
         # ML Prediction
         predicted_fps = fps
-        if self.trained:
+        if self.trained and self.model is not None:
             try:
                 predicted_fps = self.model.predict(np.array([[cpu, gpu]]))[0]
-            except:
+            except Exception:
                 pass
         
         # 1. Detection of 'Performance Health'
