@@ -259,14 +259,22 @@ class UpdateWindow(QMainWindow):
         self.status_label.setText("Starting new version. This window will close.")
         self.progress_bar.setValue(100)
 
-        # Write a small bat script that waits 2 sec then launches the new EXE
+        # In-place update: Write a batch script to replace the current EXE and restart
         bat_path = os.path.join(tempfile.gettempdir(), "nitro_update_launcher.bat")
+        current_exe = sys.executable
         try:
             with open(bat_path, "w") as bat:
-                bat.write(f'@echo off\n')
-                bat.write(f'timeout /t 2 /nobreak >nul\n')
-                bat.write(f'start "" "{path}"\n')
-                bat.write(f'del "%~f0"\n')   # self-delete the bat after launch
+                bat.write('@echo off\n')
+                bat.write('timeout /t 2 /nobreak >nul\n') # wait for app to close
+                if current_exe.lower().endswith(".exe"):
+                    # overwrite original exe with the new downloaded one
+                    bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
+                    bat.write(f'start "" "{current_exe}"\n')
+                else:
+                    # fallback if not running as compiled exe
+                    bat.write(f'start "" "{path}"\n')
+                bat.write('del "%~f0"\n')   # self-delete the bat after launch
+
             subprocess.Popen(['cmd', '/c', bat_path],
                              creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
                              close_fds=True)
