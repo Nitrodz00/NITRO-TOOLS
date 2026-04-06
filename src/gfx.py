@@ -173,22 +173,24 @@ class GFX(QObject):
             "shadow": checked_shadow
         }
         
+        profile_path = os.path.join(os.path.dirname(sys.executable), "nitro_profile.json") if getattr(sys, 'frozen', False) else "nitro_profile.json"
+        
         try:
-            with open("nitro_profile.json", "w") as f:
+            with open(profile_path, "w") as f:
                 json.dump(prof, f)
-            self.app.show_status_message("✅ PROFILE SAVED SUCCESSFULLY! Your custom config is stored.", 5)
+            self.app.show_status_message("✅ PROFILE SAVED SUCCESSFULLY! Portable config stored.", 5)
         except Exception:
-            self.app.show_status_message("Failed to save profile.")
+            self.app.show_status_message("Failed to save profile. Try running as admin.")
 
     def load_profile(self):
         import json
-        import os
-        if not os.path.exists("nitro_profile.json"):
-            self.app.show_status_message("No saved custom profile found on this PC.")
+        profile_path = os.path.join(os.path.dirname(sys.executable), "nitro_profile.json") if getattr(sys, 'frozen', False) else "nitro_profile.json"
+        if not os.path.exists(profile_path):
+            self.app.show_status_message("No saved custom profile found in app folder.")
             return
             
         try:
-            with open("nitro_profile.json", "r") as f:
+            with open(profile_path, "r") as f:
                 prof = json.load(f)
                 
             # Apply to UI
