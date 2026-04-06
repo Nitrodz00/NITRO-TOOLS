@@ -120,49 +120,14 @@ class GFX(QObject):
 
         self.call_app()
 
-    def call_app(self):
+        self.graphics_buttons_func()
+        self.fps_buttons_func()
+        self.style_buttons_func()
+        self.shadow_buttons = [self.ui.disable_shadow_btn, self.ui.enable_shadow_btn]
+
         # Hide Labels and Buttons in UI
         self.ui.ResolutionkrFrame.hide()
         self.ui.PubgchooseFrame.hide()
-
-        self.graphics_buttons_func()
-        self.style_buttons_func()
-
-        self.graphics_buttons = [
-            self.ui.super_smooth_graphics_btn,
-            self.ui.smooth_graphics_btn,
-            self.ui.balanced_graphics_btn,
-            self.ui.hd_graphics_btn,
-            self.ui.hdr_graphics_btn,
-            self.ui.ultrahd_graphics_btn,
-        ]
-        self.fps_buttons = [
-            self.ui.low_fps_btn,
-            self.ui.medium_fps_btn,
-            self.ui.high_fps_btn,
-            self.ui.ultra_fps_btn,
-            self.ui.extreme_fps_btn,
-            self.ui.fps90_fps_btn,
-            self.ui.fps120_fps_btn
-        ]
-        self.style_buttons = [
-            self.ui.classic_style_btn,
-            self.ui.colorful_style_btn,
-            self.ui.realistic_style_btn,
-            self.ui.soft_style_btn,
-            self.ui.movie_style_btn
-        ]
-        
-        battle_style_dict = {
-            b'\x01': "Classic",
-            b'\x02': "Colorful",
-            b'\x03': "Realistic",
-            b'\x04': "Soft",
-            b'\x06': "Movie"
-        }
-        for button, style_id in zip(self.style_buttons, battle_style_dict.values()):
-            button.setProperty("styleId", style_id)
-
         self.gfx_buttons(enabled=False)
 
         # Button connections
@@ -170,7 +135,6 @@ class GFX(QObject):
         self.ui.submit_gfx_btn.clicked.connect(self.gfx_submit_button_click)
         
         # Shadow button connections
-        self.shadow_buttons = [self.ui.disable_shadow_btn, self.ui.enable_shadow_btn]
         self.ui.disable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.disable_shadow_btn))
         self.ui.enable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.enable_shadow_btn))
 
@@ -331,6 +295,17 @@ class GFX(QObject):
             self.ui.soft_style_btn,
             self.ui.movie_style_btn
         ]
+        battle_style_dict = {
+            b'\x01': "Classic",
+            b'\x02': "Colorful",
+            b'\x03': "Realistic",
+            b'\x04': "Soft",
+            b'\x06': "Movie"
+        }
+
+        for button, style_id in zip(self.style_buttons, battle_style_dict.values()):
+            button.setProperty("styleId", style_id)
+
         self.style_value = self.app.get_graphics_style()
 
         for button in self.style_buttons:

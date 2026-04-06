@@ -268,28 +268,23 @@ class UpdateWindow(QMainWindow):
         try:
             with open(bat_path, "w") as bat:
                 bat.write('@echo off\n')
-                bat.write('timeout /t 2 /nobreak >nul\n') # wait for app to close
-                if current_exe.lower().endswith(".exe"):
-                    if current_exe.lower() != new_exe_path.lower():
-                        bat.write(':retry_del\n')
-                        bat.write(f'del /Q "{current_exe}" >nul 2>&1\n')
-                        bat.write(f'if exist "{current_exe}" (\n')
-                        bat.write('  timeout /t 1 /nobreak >nul\n')
-                        bat.write('  goto retry_del\n')
-                        bat.write(')\n')
-                        bat.write(f'move /Y "{path}" "{new_exe_path}" >nul\n')
-                        bat.write(f'start "" "{new_exe_path}"\n')
-                    else:
-                        bat.write(':retry_move\n')
-                        bat.write(f'move /Y "{path}" "{current_exe}" >nul 2>&1\n')
-                        bat.write(f'if errorlevel 1 (\n')
-                        bat.write('  timeout /t 1 /nobreak >nul\n')
-                        bat.write('  goto retry_move\n')
-                        bat.write(')\n')
-                        bat.write(f'start "" "{current_exe}"\n')
+                bat.write('set count=0\n')
+                bat.write(':wait_loop\n')
+                bat.write('timeout /t 1 /nobreak >nul\n') # wait 1 sec
+                bat.write(f'del /Q "{current_exe}" >nul 2>&1\n')
+                bat.write(f'if exist "{current_exe}" (\n')
+                bat.write('  set /a count+=1\n')
+                bat.write('  if %count% LSS 10 goto wait_loop\n') # try 10 times
+                bat.write(')\n')
+                
+                # Check if we are renaming or just overwriting
+                if current_exe.lower() != new_exe_path.lower():
+                    bat.write(f'move /Y "{path}" "{new_exe_path}" >nul\n')
+                    bat.write(f'start "" "{new_exe_path}"\n')
                 else:
-                    # fallback if not running as compiled exe
-                    bat.write(f'start "" "{path}"\n')
+                    bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
+                    bat.write(f'start "" "{current_exe}"\n')
+                
                 bat.write('del "%~f0"\n')   # self-delete the bat after launch
 
             subprocess.Popen(['cmd', '/c', bat_path],

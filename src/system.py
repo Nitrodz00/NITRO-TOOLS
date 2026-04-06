@@ -39,7 +39,7 @@ class SystemTweaks(QObject):
         self.app.show_status_message(f"AI Scan: {total_ram:.1f}GB RAM, {cores} Cores. Optimizing...")
         
         # Reset current UI choices
-        for btn in self.app.gfx.graphics_buttons + self.app.gfx.fps_buttons + self.app.gfx.style_buttons:
+        for btn in self.app.GFX.graphics_buttons + self.app.GFX.fps_buttons + self.app.GFX.style_buttons:
             btn.setChecked(False)
             
         # Decision Logic
@@ -66,7 +66,7 @@ class SystemTweaks(QObject):
             self.app.optimizer.apply_performance_mode('competitive')
             
         # Apply the checks directly
-        self.app.gfx.gfx_submit_button_click()
+        self.app.GFX.gfx_submit_button_click()
         self.activate_high_priority()
         self.activate_cpu_affinity()
         self.app.show_status_message("AI Optimization Complete! GameLoop Set to Optimal.")
