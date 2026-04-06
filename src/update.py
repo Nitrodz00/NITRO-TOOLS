@@ -262,14 +262,23 @@ class UpdateWindow(QMainWindow):
         # In-place update: Write a batch script to replace the current EXE and restart
         bat_path = os.path.join(tempfile.gettempdir(), "nitro_update_launcher.bat")
         current_exe = sys.executable
+        new_exe_name = self.asset_name if self.asset_name.lower().endswith(".exe") else f"{self.asset_name}.exe"
+        new_exe_path = os.path.join(os.path.dirname(current_exe), new_exe_name)
+        
         try:
             with open(bat_path, "w") as bat:
                 bat.write('@echo off\n')
                 bat.write('timeout /t 2 /nobreak >nul\n') # wait for app to close
                 if current_exe.lower().endswith(".exe"):
-                    # overwrite original exe with the new downloaded one
-                    bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
-                    bat.write(f'start "" "{current_exe}"\n')
+                    if current_exe.lower() != new_exe_path.lower():
+                        # delete old named file, move downloaded to new named file
+                        bat.write(f'del /Q "{current_exe}" >nul 2>&1\n')
+                        bat.write(f'move /Y "{path}" "{new_exe_path}" >nul\n')
+                        bat.write(f'start "" "{new_exe_path}"\n')
+                    else:
+                        # names match exactly, just overwrite
+                        bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
+                        bat.write(f'start "" "{current_exe}"\n')
                 else:
                     # fallback if not running as compiled exe
                     bat.write(f'start "" "{path}"\n')
