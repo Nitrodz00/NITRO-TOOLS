@@ -118,8 +118,6 @@ class GFX(QObject):
         self.ui: Ui_MainWindow = window.ui
         self.app: Window = window
 
-        self.call_app()
-
         self.graphics_buttons_func()
         self.fps_buttons_func()
         self.style_buttons_func()
