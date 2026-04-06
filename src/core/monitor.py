@@ -1,3 +1,5 @@
+import random
+import subprocess
 import psutil
 from PyQt5.QtCore import QThread, pyqtSignal
 from time import sleep
@@ -36,7 +38,7 @@ class MonitorStats(QThread):
             estimated *= (1.0 - (cpu_process_load / 400.0)) # Reduce if CPU bottleneck
         
         # Add slight realistic fluctuation (+/- 2 FPS) if active
-        import random
+        import random  # noqa — kept for now in case random needed elsewhere
         if estimated > 10:
             estimated += random.uniform(-2, 2)
             
@@ -54,27 +56,27 @@ class MonitorStats(QThread):
                     "fps": 0
                 }
                 
-                # Fetch GPU stats (Safe, non-flashing)
+                # Fetch GPU stats safely via nvidia-smi
                 CREATE_NO_WINDOW = 0x08000000
-                import subprocess
                 try:
-                    # Query nvidia-smi for load and temp (non-flashing)
                     cmd = ["nvidia-smi", "--query-gpu=utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"]
                     output = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW).stdout
                     if output.strip():
-                        load, temp = output.strip().split(',')
-                        stats["gpu_percent"] = float(load.strip())
-                        stats["gpu_temp"] = int(temp.strip())
-                except:
+                        parts = output.strip().split(',')
+                        stats["gpu_percent"] = float(parts[0].strip())
+                        stats["gpu_temp"] = int(parts[1].strip())
+                except Exception:
                     pass
 
-                # Process specific stats for FPS estimation
+                # Get GameLoop process CPU usage for FPS estimation
                 game_cpu_load = 0.0
+                target_names = {'aow_exe.exe', 'androidemulatorex.exe', 'androidemulatoren.exe'}
                 for proc in psutil.process_iter(['name']):
-                    if proc.info['name'] in ['aow_exe.exe', 'AndroidEmulatorEn.exe']:
-                        try:
+                    try:
+                        if proc.info['name'].lower() in target_names:
                             game_cpu_load += proc.cpu_percent()
-                        except: pass
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
                 
                 # Apply Estimation Algorithm (Part 1 - Option B)
                 stats["fps"] = self._estimate_fps(stats["gpu_percent"], game_cpu_load)

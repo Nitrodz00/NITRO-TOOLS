@@ -11,7 +11,7 @@ class SubmitWorkerThread(QThread):
         self.gfx = gfx
 
     def run(self):
-        self.app.show_status_message("Working on Graphics Settings ...")
+        self.app.show_status_message("Working on Graphics Settings...")
 
         checked_graphics_button = next((button for button in self.gfx.graphics_buttons if button.isChecked()), None)
         if checked_graphics_button:

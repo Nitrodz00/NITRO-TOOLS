@@ -98,14 +98,11 @@ class Registry(Settings):
 
 class Optimizer(Registry):
     def apply_network_tweaks(self):
-        """Applies TCP NoDelay and Network Throttling bypass for minimum ping"""
+        """Applies TCP NoDelay and Network Throttling bypass for minimum ping."""
         try:
-            # Bypass Network Throttling
-            import winreg
             key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", 0, winreg.KEY_SET_VALUE)
             winreg.SetValueEx(key, "NetworkThrottlingIndex", 0, winreg.REG_DWORD, 0xFFFFFFFF)
             winreg.CloseKey(key)
-
             key2 = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", 0, winreg.KEY_SET_VALUE)
             winreg.SetValueEx(key2, "SystemResponsiveness", 0, winreg.REG_DWORD, 0x00000000)
             winreg.CloseKey(key2)
@@ -203,8 +200,8 @@ class Optimizer(Registry):
         clear_files(r"C:\Windows\Temp")
         clear_files(os.path.expandvars(r'%windir%\Prefetch'))
         gameloop_ui_path = self.get_local_reg('InstallPath', path='UI')
-        clear_files(os.path.join(gameloop_ui_path, 'ShaderCache'))
-
+        if gameloop_ui_path:
+            clear_files(os.path.join(gameloop_ui_path, 'ShaderCache'))
         return True
 
     def gameloop_settings(self):

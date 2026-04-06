@@ -90,7 +90,7 @@ class Other(QObject):
             self.app.show_status_message("System performance optimized & temporary files cleaned", 5)
         except Exception as e:
             self.logger.error(f"Exception occurred: {str(e)}", exc_info=True)
-            self.app.show_status_message(f"There was an Error saved in error.log")
+            self.app.show_status_message("There was an error saved in error.log")
 
     def gameloop_smart_settings_button_click(self, e):
         """ Low-End Mode Button """
@@ -172,7 +172,7 @@ class Other(QObject):
             if self.app.is_gameloop_running():
                 self.app.show_status_message(f"Close Gameloop to use this button. (Force Close Gameloop)", 5)
                 return
-            self.app.show_status_message("please wait, Working on it...", 15)
+            self.app.show_status_message("Please wait, working on it...", 15)
             self.ui.ipad_other_btn.setEnabled(False)
             self.ui.ipad_rest_btn.setEnabled(False)
             self.worker_ipad_submit = IPADWorkerThread(self.app, self.ui, self)
