@@ -165,17 +165,17 @@ class Window(QtWidgets.QMainWindow, Game):
     def _fix_ui_layouts(self):
         """Fix hardcoded UI overlaps from the .ui file."""
         try:
-            # 1. Increase Frame Heights to prevent clipping
-            self.ui.GraphicsFrame.setMinimumHeight(130)
-            self.ui.FramerateFrame.setMinimumHeight(130)
-            self.ui.ShadowFrame.setMinimumHeight(130)
-            self.ui.StyleFrame.setMinimumHeight(240)
+            # 1. Adapt Frame Heights to fit the 581px bounds in ui.py
+            self.ui.GraphicsFrame.setMinimumHeight(105)
+            self.ui.FramerateFrame.setMinimumHeight(105)
+            self.ui.ShadowFrame.setMinimumHeight(105)
+            self.ui.StyleFrame.setMinimumHeight(220)
             
-            # 2. Add Spacing to the main GFX grid
+            # 2. Reduce Vertical Spacing to avoid overflow and overlaps
             if hasattr(self.ui, 'gridLayout'):
-                self.ui.gridLayout.setVerticalSpacing(40)  # Increased from 25
-                self.ui.gridLayout.setHorizontalSpacing(30)
-                self.ui.gridLayout.setContentsMargins(20, 20, 20, 20)
+                self.ui.gridLayout.setVerticalSpacing(10)  # Prevent overlap
+                self.ui.gridLayout.setHorizontalSpacing(15)
+                self.ui.gridLayout.setContentsMargins(10, 5, 10, 5)
             
             # Position elements SAFELY inside their respective frames with safe font sizes
             label_style = "color: #ffffff; font-weight: bold; background: transparent;"
