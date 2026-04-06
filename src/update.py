@@ -271,13 +271,24 @@ class UpdateWindow(QMainWindow):
                 bat.write('timeout /t 2 /nobreak >nul\n') # wait for app to close
                 if current_exe.lower().endswith(".exe"):
                     if current_exe.lower() != new_exe_path.lower():
-                        # delete old named file, move downloaded to new named file
+                        # loop to wait for old file to unlock
+                        bat.write(':wait_loop\n')
                         bat.write(f'del /Q "{current_exe}" >nul 2>&1\n')
+                        bat.write(f'if exist "{current_exe}" (\n')
+                        bat.write('    timeout /t 1 /nobreak >nul\n')
+                        bat.write('    goto wait_loop\n')
+                        bat.write(')\n')
+                        
                         bat.write(f'move /Y "{path}" "{new_exe_path}" >nul\n')
                         bat.write(f'start "" "{new_exe_path}"\n')
                     else:
-                        # names match exactly, just overwrite
-                        bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
+                        # names match exactly, just overwrite but wait for unlock first
+                        bat.write(':wait_loop_exact\n')
+                        bat.write(f'move /Y "{path}" "{current_exe}" >nul 2>&1\n')
+                        bat.write('if "%errorlevel%" neq "0" (\n')
+                        bat.write('    timeout /t 1 /nobreak >nul\n')
+                        bat.write('    goto wait_loop_exact\n')
+                        bat.write(')\n')
                         bat.write(f'start "" "{current_exe}"\n')
                 else:
                     # fallback if not running as compiled exe

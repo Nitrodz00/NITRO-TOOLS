@@ -154,13 +154,20 @@ class Optimizer(Registry):
     def set_ultimate_performance_power_plan(self):
         """Unlocks and activates the Ultimate Performance power plan (Windows 10/11)"""
         try:
+            # First, check if it's already active or just try to activate the base alias
+            ret = subprocess.run(["powercfg", "/setactive", "e9a42b02-d5df-448d-aa00-03f14749eb61"], capture_output=True, creationflags=CREATE_NO_WINDOW)
+            if ret.returncode == 0: return True
+            
             # Unhide/Unlock Ultimate Performance scheme
-            subprocess.run(["powercfg", "-duplicatescheme", "e9a42b02-d5df-448d-aa00-03f14749eb61"], 
-                           capture_output=True, creationflags=CREATE_NO_WINDOW)
-            # Activate it
-            subprocess.run(["powercfg", "/setactive", "e9a42b02-d5df-448d-aa00-03f14749eb61"], 
-                           check=True, creationflags=CREATE_NO_WINDOW)
-            return True
+            out = subprocess.run(["powercfg", "-duplicatescheme", "e9a42b02-d5df-448d-aa00-03f14749eb61"], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+            
+            import re
+            match = re.search(r"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})", out.stdout, re.I)
+            if match:
+                new_guid = match.group(1)
+                subprocess.run(["powercfg", "/setactive", new_guid], check=True, creationflags=CREATE_NO_WINDOW)
+                return True
+            return False
         except:
             return False
 
