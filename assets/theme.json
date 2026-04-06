@@ -1,0 +1,8 @@
+{
+    "primary_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00f2fe, stop:1 #4facfe)",
+    "system_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6a11cb, stop:1 #2575fc)",
+    "maintenance_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #11998e, stop:1 #38ef7d)",
+    "profile_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #373b44, stop:1 #4286f4)",
+    "accent_color": "#00ffca",
+    "text_color": "#ffffff"
+}

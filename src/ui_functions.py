@@ -1,4 +1,7 @@
-from PyQt5 import QtCore, QtWidgets, QtGui
+import os
+import requests
+import json
+from threading import Thread
 from .app_functions import Game
 from .gfx import GFX
 from .other import Other
@@ -32,6 +35,10 @@ class Window(QtWidgets.QMainWindow, Game):
 
         # UI Setup
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
+        # Load Cloud Theme Initializer
+        self.theme = self._get_default_theme()
+        Thread(target=self._fetch_cloud_theme, daemon=True).start()
+        
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.appname_label.setText(f"{app_name} {app_version}")
@@ -222,59 +229,70 @@ class Window(QtWidgets.QMainWindow, Game):
                 grid_layout.setSpacing(15)
                 system_layout.addLayout(grid_layout)
                 
+                # --- APPLY CLOUD THEME ---
+                t = self.theme
+                AI_STYLE = f"background: {t['primary_gradient']}; color: #000; font-weight: 900; font-size: 14px; border-radius: 6px;"
+                HOTKEYS_STYLE = "QPushButton { background: #1a0033; border: 2px solid #b300b3; border-radius: 6px; color: #ffffff; } QPushButton:checked { background: #ff00ff; color: #000; font-weight: bold; }"
+                SYS_BOOT_STYLE = f"QPushButton {{ background: {t['system_gradient']}; color: white; border-radius: 6px; font-weight: bold; }} QPushButton:hover {{ border: 1px solid {t['accent_color']}; }}"
+                MAINTAIN_STYLE = f"QPushButton {{ background: {t['maintenance_gradient']}; color: white; border-radius: 6px; font-weight: bold; }} QPushButton:hover {{ border: 1px solid #ffffff; }}"
+                PROFILE_STYLE = f"QPushButton {{ background: {t['profile_gradient']}; color: white; border-radius: 6px; font-weight: bold; }} QPushButton:hover {{ background: #4286f4; }}"
+
                 # --- NEW BUTTONS ---
                 self.ui.ai_optimizer_btn = QtWidgets.QPushButton("🤖 ONE-CLICK AI OPTIMIZER")
                 self.ui.ai_optimizer_btn.setMinimumHeight(btn_h)
-                self.ui.ai_optimizer_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff00ff, stop:1 #00ffca); color: #000; font-weight: 900; font-size: 14px;")
+                self.ui.ai_optimizer_btn.setStyleSheet(AI_STYLE)
                 grid_layout.addWidget(self.ui.ai_optimizer_btn, 0, 0, 1, 2)
                 
                 self.ui.hotkeys_btn = QtWidgets.QPushButton("⌨️ ENABLE IN-GAME HOTKEYS (F8 RAM Clean, F9 Auto-Prio)")
                 self.ui.hotkeys_btn.setMinimumHeight(btn_h)
                 self.ui.hotkeys_btn.setCheckable(True)
-                self.ui.hotkeys_btn.setStyleSheet("background: #330033; border: 1px solid #ff00ff;")
+                self.ui.hotkeys_btn.setStyleSheet(HOTKEYS_STYLE)
                 grid_layout.addWidget(self.ui.hotkeys_btn, 1, 0, 1, 2)
                 
                 # High Priority Button
                 self.ui.high_priority_btn = QtWidgets.QPushButton("🚀 HIGH PRIORITY")
                 self.ui.high_priority_btn.setMinimumHeight(btn_h)
+                self.ui.high_priority_btn.setStyleSheet(SYS_BOOT_STYLE)
                 grid_layout.addWidget(self.ui.high_priority_btn, 2, 0)
 
                 # CPU Affinity Button
                 self.ui.cpu_affinity_btn = QtWidgets.QPushButton("🧠 OPTIMIZE CPU CORES")
                 self.ui.cpu_affinity_btn.setMinimumHeight(btn_h)
-                self.ui.cpu_affinity_btn.setStyleSheet("background: #003366; border: 2px solid #00ffca;")
+                self.ui.cpu_affinity_btn.setStyleSheet(SYS_BOOT_STYLE)
                 grid_layout.addWidget(self.ui.cpu_affinity_btn, 2, 1)
 
                 # Power Plan Buttons
                 self.ui.high_perf_power_btn = QtWidgets.QPushButton("⚡ HIGH PERFORMANCE")
                 self.ui.high_perf_power_btn.setMinimumHeight(btn_h)
+                self.ui.high_perf_power_btn.setStyleSheet(SYS_BOOT_STYLE)
                 grid_layout.addWidget(self.ui.high_perf_power_btn, 3, 0)
 
                 self.ui.ultimate_perf_power_btn = QtWidgets.QPushButton("💎 ULTIMATE PERFORMANCE")
                 self.ui.ultimate_perf_power_btn.setMinimumHeight(btn_h)
-                self.ui.ultimate_perf_power_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ffcc00, stop:1 #ff00ff); color: #000; font-weight: 900;")
+                self.ui.ultimate_perf_power_btn.setStyleSheet(AI_STYLE) # Match AI for Premium look
                 grid_layout.addWidget(self.ui.ultimate_perf_power_btn, 3, 1)
 
                 # RAM Cleaner Button
                 self.ui.ram_cleaner_btn = QtWidgets.QPushButton("🧹 CLEAN RAM STANDBY")
                 self.ui.ram_cleaner_btn.setMinimumHeight(btn_h)
-                self.ui.ram_cleaner_btn.setStyleSheet("background: #1a0033; border: 2px solid #ff00ff;")
+                self.ui.ram_cleaner_btn.setStyleSheet(MAINTAIN_STYLE)
                 grid_layout.addWidget(self.ui.ram_cleaner_btn, 4, 0)
 
                 # Ping Stabilizer Button
                 self.ui.ping_stab_btn = QtWidgets.QPushButton("📡 STABILIZE PING")
                 self.ui.ping_stab_btn.setMinimumHeight(btn_h)
-                self.ui.ping_stab_btn.setStyleSheet("background: #004d00; border: 2px solid #00ff00;")
+                self.ui.ping_stab_btn.setStyleSheet(MAINTAIN_STYLE)
                 grid_layout.addWidget(self.ui.ping_stab_btn, 4, 1)
+                
                 # --- PROFILES BUTTONS ---
                 self.ui.save_profile_btn = QtWidgets.QPushButton("💾 SAVE CUSTOM PROFILE (All Settings)")
                 self.ui.save_profile_btn.setMinimumHeight(btn_h)
-                self.ui.save_profile_btn.setStyleSheet("background: #003366; color: white;")
+                self.ui.save_profile_btn.setStyleSheet(PROFILE_STYLE)
                 grid_layout.addWidget(self.ui.save_profile_btn, 5, 0)
 
                 self.ui.load_profile_btn = QtWidgets.QPushButton("📂 LOAD CUSTOM PROFILE")
                 self.ui.load_profile_btn.setMinimumHeight(btn_h)
-                self.ui.load_profile_btn.setStyleSheet("background: #330033; color: white;")
+                self.ui.load_profile_btn.setStyleSheet(PROFILE_STYLE)
                 grid_layout.addWidget(self.ui.load_profile_btn, 5, 1)
 
                 exp_spacer = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -449,3 +467,24 @@ class Window(QtWidgets.QMainWindow, Game):
     def _stop_background_threads(self):
         self.watcher.stop()
         self.monitor.stop()
+
+    def _get_default_theme(self):
+        return {
+            "primary_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00f2fe, stop:1 #4facfe)",
+            "system_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6a11cb, stop:1 #2575fc)",
+            "maintenance_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #11998e, stop:1 #38ef7d)",
+            "profile_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #373b44, stop:1 #4286f4)",
+            "accent_color": "#00ffca"
+        }
+
+    def _fetch_cloud_theme(self):
+        """INTERNAL UI UPDATE: Fetch branding from GitHub without requiring app update."""
+        url = "https://raw.githubusercontent.com/Nitrodz00/NITRO-TOOLS/main/assets/theme.json"
+        try:
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                self.theme = resp.json()
+                # Re-apply styles if already visible (optional, usually applied at next fix_ui_layouts call or manually)
+                QtCore.QMetaObject.invokeMethod(self, "_fix_ui_layouts", QtCore.Qt.QueuedConnection)
+        except:
+            pass # Use default theme if offline
