@@ -10,7 +10,37 @@
 
 ---
 
-## ⚡ Features
+## 🚀 Latest Features (v2.5.0)
+
+### 🔒 Enhanced Security & Stability
+- **File Integrity Checks:** Automatic verification of update downloads
+- **Improved Admin Handling:** Better error management for permission issues
+
+### 🧠 Advanced AI & ML
+- **Machine Learning FPS Prediction:** AI optimizer now uses ML models for smarter performance tuning
+- **Adaptive Learning:** System learns from your hardware patterns for optimal settings
+
+### 🎨 Multiple Theme Variants
+- **Cosmic Theme:** Original deep purple gradients
+- **Neon Green:** Cyberpunk green accents
+- **Red Alert:** High-contrast red theme
+
+### 🌡️ Thermal Management
+- **Real-time Temperature Monitoring:** CPU and GPU temps displayed in header
+- **Thermal Alerts:** Notifications for overheating conditions
+
+### 🖥️ Expanded Hardware Support
+- **AMD GPU Detection:** Full support for Radeon graphics cards
+- **Universal Compatibility:** Better detection across different hardware configs
+
+### 🔔 Windows Notifications
+- **Game Detection Alerts:** Toast notifications when GameLoop starts/stops
+- **Update Notifications:** System tray alerts for available updates
+
+### 🌍 Multi-Language Support
+- **English & Arabic:** Basic localization framework (expandable)
+
+---
 
 ### 🧠 AI Dynamic Optimizer
 - **Intelligent Modes:** Automatically switches between `Low-End`, `Balanced`, and `Competitive` modes based on real-time resource usage.
@@ -70,7 +100,7 @@ To build EXE locally (same output as CI):
 ```
 Or: `pip install -r requirements-build.txt` then `pyinstaller NITROTOOLS_RELEASE.spec` (set `PYINSTALLER_EXE_NAME` if you need a custom file name).
 
-**Latest Release: v2.4.4** - Improved stability and minor bug fixes.
+**Latest Release: v2.5.0** - Major enhancements including ML-powered AI, thermal management, multiple themes, and improved security.
 
 ---
 
