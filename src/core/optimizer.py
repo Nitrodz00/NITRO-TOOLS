@@ -15,38 +15,36 @@ class SystemOptimizer:
         self.REG_UI = r'SOFTWARE\WOW6432Node\Tencent\MobileGamePC\UI'
         
     def get_hardware_info(self) -> Dict[str, Any]:
-        """Detect system hardware to recommend settings."""
+        """Detect system hardware to recommend settings gracefully."""
         stats = {
-            "cpu_cores": psutil.cpu_count(logical=False),
-            "cpu_threads": psutil.cpu_count(logical=True),
+            "cpu_cores": psutil.cpu_count(logical=False) or 4,
+            "cpu_threads": psutil.cpu_count(logical=True) or 8,
             "ram_total_gb": round(psutil.virtual_memory().total / (1024**3)),
-            "gpu_name": "Unknown",
-            "vram_mb": 0
+            "gpu_name": "Generic GPU",
+            "vram_mb": 2048
         }
         
+        CREATE_NO_WINDOW = 0x08000000
         try:
-            CREATE_NO_WINDOW = 0x08000000
+            # Try NVIDIA Detection
             cmd = ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"]
-            out = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW).stdout
-            if out.strip():
-                name, vram = out.strip().split(',')
-                stats["gpu_name"] = name.strip()
-                stats["vram_mb"] = float(vram.strip())
-        except:
-            # Try AMD GPU detection
+            res = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+            out = res.stdout.strip()
+            if out and ',' in out:
+                parts = out.split(',')
+                if len(parts) >= 2:
+                    stats["gpu_name"] = parts[0].strip()
+                    try: stats["vram_mb"] = float(parts[1].strip())
+                    except: pass
+        except Exception:
             try:
-                cmd = ["wmic", "path", "win32_videocontroller", "get", "name,memorytype", "/format:csv"]
-                out = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW).stdout
-                lines = out.strip().split('\n')
-                if len(lines) > 1:
-                    parts = lines[1].split(',')
-                    if len(parts) >= 2:
-                        gpu_name = parts[0].strip()
-                        if 'amd' in gpu_name.lower() or 'radeon' in gpu_name.lower():
-                            stats["gpu_name"] = gpu_name
-                            # VRAM estimation (rough)
-                            stats["vram_mb"] = 4096  # Default assumption
-            except:
+                # Try WMIC Generic Detection as fallback
+                cmd = ["wmic", "path", "win32_videocontroller", "get", "name", "/format:list"]
+                res = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+                out = res.stdout.strip()
+                if "Name=" in out:
+                    stats["gpu_name"] = out.split("Name=")[1].split("\n")[0].strip()
+            except Exception:
                 pass
             
         return stats

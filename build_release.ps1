@@ -4,8 +4,8 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-$ReleaseVersion = "2.5.1"
-$ExeName = "NITROTOOLS_PUBG_MOBILE_v$ReleaseVersion.exe"
+$ReleaseVersion = "2.5.3"
+$ExeName = "NITROTOOLS_PUBG_MOBILE.exe"
 
 Write-Host "Installing build deps (PyInstaller)..." -ForegroundColor Cyan
 python -m pip install -q --upgrade pip
@@ -13,7 +13,7 @@ python -m pip install -q -r requirements.txt
 python -m pip install -q -r requirements-build.txt
 
 Write-Host "Building NITROTOOLS_RELEASE.spec (clean)..." -ForegroundColor Cyan
-$env:PYINSTALLER_EXE_NAME = "NITROTOOLS_PUBG_MOBILE_v$ReleaseVersion"
+$env:PYINSTALLER_EXE_NAME = "NITROTOOLS_PUBG_MOBILE"
 python -m PyInstaller --noconfirm --clean NITROTOOLS_RELEASE.spec
 
 $exe = Join-Path $PSScriptRoot "dist\$ExeName"
