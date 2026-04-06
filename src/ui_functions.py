@@ -196,17 +196,17 @@ class Window(QtWidgets.QMainWindow, Game):
             
             # Shadow
             if hasattr(self.ui, 'shadow_label'): 
-                self.ui.shadow_label.setGeometry(QtCore.QRect(10, 0, 400, 35))
-                self.ui.shadow_label.setStyleSheet(label_style + "font-size: 22px;") # Slightly smaller font
+                self.ui.shadow_label.setGeometry(QtCore.QRect(10, 2, 400, 35))
+                self.ui.shadow_label.setStyleSheet(label_style + "font-size: 20px;") 
             if hasattr(self.ui, 'layoutWidget_2'): 
-                self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 55, 400, 45))
+                self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 50, 400, 50))
             
             # Resolution
             if hasattr(self.ui, 'resolution_label'):
-                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 0, 400, 35))
-                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 22px;") 
+                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 2, 400, 35))
+                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 20px;") 
             if hasattr(self.ui, 'resolution_btn'):
-                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 55, 200, 45))
+                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 50, 220, 50))
             
             # --- PROGRAMMATICALLY ADD SYSTEM PAGE ---
             if not hasattr(self.ui, 'system_page'):
@@ -276,14 +276,14 @@ class Window(QtWidgets.QMainWindow, Game):
 
             # 4. Status Bar Overlap Fix
             if hasattr(self.ui, 'appstatus_label'): self.ui.appstatus_label.setGeometry(QtCore.QRect(10, 680, 100, 40))
-            if hasattr(self.ui, 'appstatus_text_lable'): self.ui.appstatus_text_lable.setGeometry(QtCore.QRect(120, 680, 600, 40))
+            if hasattr(self.ui, 'appstatus_text_lable'): self.ui.appstatus_text_lable.setGeometry(QtCore.QRect(120, 680, 700, 40))
 
             # 5. OTHER page spacing refinement
             if hasattr(self.ui, 'optimizer_label'): self.ui.optimizer_label.setGeometry(QtCore.QRect(30, 20, 400, 50))
             if hasattr(self.ui, 'shortcut_label'): self.ui.shortcut_label.setGeometry(QtCore.QRect(520, 20, 400, 50))
             
-            # 6. Sidebar & Global Buttons
-            if hasattr(self.ui, 'PagesFrame'): self.ui.PagesFrame.setGeometry(QtCore.QRect(1120, 80, 180, 640))
+            # 6. Sidebar & Global Buttons - Width MUST be 168 to match buttons
+            if hasattr(self.ui, 'PagesFrame'): self.ui.PagesFrame.setGeometry(QtCore.QRect(1124, 70, 168, 650))
         except Exception as e:
             # Prevent minor UI glitches from crashing the whole app
             print(f"Non-critical UI layout adjustment failed: {e}")

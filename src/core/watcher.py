@@ -16,22 +16,28 @@ class GameWatcher(QThread):
 
     def run(self):
         """Monitor processes in a loop with low overhead."""
+        target_procs_lower = [p.lower() for p in self.target_processes]
+        killer_procs_lower = [p.lower() for p in self.telemetry_killers]
+        
         while self.running:
             try:
                 current_running = False
                 for proc in psutil.process_iter(['name', 'nice', 'cpu_affinity']):
-                    name = proc.info['name']
-                    
-                    if name in self.target_processes:
-                        current_running = True
-                        self._apply_boost(proc)
-                    
-                    # Kill redundant background trackers
-                    if name in self.telemetry_killers:
-                        try:
-                            proc.terminate()
-                        except:
-                            pass
+                    try:
+                        name_lower = proc.info['name'].lower()
+                        
+                        if name_lower in target_procs_lower:
+                            current_running = True
+                            self._apply_boost(proc)
+                        
+                        # Kill redundant background trackers
+                        if name_lower in killer_procs_lower:
+                            try:
+                                proc.terminate()
+                            except:
+                                pass
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        continue
                 
                 if current_running != self.game_running:
                     self.game_running = current_running
@@ -41,7 +47,7 @@ class GameWatcher(QThread):
                 pass
             
             # Use adaptive polling - check slower when inactive, faster when game is on
-            sleep(2 if not self.game_running else 5)
+            sleep(4 if not self.game_running else 8) # Slower polling to save CPU
 
     def _apply_boost(self, proc):
         """Apply High Priority and CPU Affinity."""
