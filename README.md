@@ -45,11 +45,11 @@
 
 ### Publish a new downloadable release (maintainers)
 
-1. Bump `APP_VERSION` in `main.py` (e.g. `v2.2.0`) and commit.
+1. Bump `APP_VERSION` in `main.py` (e.g. `v2.2.1`) and commit.
 2. Create and push a matching Git tag:
    ```bash
-   git tag v2.2.0
-   git push origin v2.2.0
+   git tag v2.2.1
+   git push origin v2.2.1
    ```
 3. GitHub Actions builds the EXE and attaches it to that release. Users get it from **Releases → latest**.
 
