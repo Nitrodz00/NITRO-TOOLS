@@ -216,43 +216,73 @@ class Window(QtWidgets.QMainWindow, Game):
                 system_layout.addWidget(desc)
                 
                 # Button Config
-                btn_h = 52
+                btn_h = 50
+                
+                grid_layout = QtWidgets.QGridLayout()
+                grid_layout.setSpacing(15)
+                system_layout.addLayout(grid_layout)
+                
+                # --- NEW BUTTONS ---
+                self.ui.ai_optimizer_btn = QtWidgets.QPushButton("🤖 ONE-CLICK AI OPTIMIZER")
+                self.ui.ai_optimizer_btn.setMinimumHeight(btn_h)
+                self.ui.ai_optimizer_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff00ff, stop:1 #00ffca); color: #000; font-weight: 900; font-size: 14px;")
+                grid_layout.addWidget(self.ui.ai_optimizer_btn, 0, 0, 1, 2)
+                
+                self.ui.hotkeys_btn = QtWidgets.QPushButton("⌨️ ENABLE IN-GAME HOTKEYS (F8 RAM Clean, F9 Auto-Prio)")
+                self.ui.hotkeys_btn.setMinimumHeight(btn_h)
+                self.ui.hotkeys_btn.setCheckable(True)
+                self.ui.hotkeys_btn.setStyleSheet("background: #330033; border: 1px solid #ff00ff;")
+                grid_layout.addWidget(self.ui.hotkeys_btn, 1, 0, 1, 2)
                 
                 # High Priority Button
-                self.ui.high_priority_btn = QtWidgets.QPushButton("🚀 ACTIVATE HIGH PRIORITY (GAMELOOP)")
+                self.ui.high_priority_btn = QtWidgets.QPushButton("🚀 HIGH PRIORITY")
                 self.ui.high_priority_btn.setMinimumHeight(btn_h)
-                system_layout.addWidget(self.ui.high_priority_btn)
+                grid_layout.addWidget(self.ui.high_priority_btn, 2, 0)
 
                 # CPU Affinity Button
-                self.ui.cpu_affinity_btn = QtWidgets.QPushButton("🧠 OPTIMIZE CPU CORES (AFFINITY)")
+                self.ui.cpu_affinity_btn = QtWidgets.QPushButton("🧠 OPTIMIZE CPU CORES")
                 self.ui.cpu_affinity_btn.setMinimumHeight(btn_h)
                 self.ui.cpu_affinity_btn.setStyleSheet("background: #003366; border: 2px solid #00ffca;")
-                system_layout.addWidget(self.ui.cpu_affinity_btn)
+                grid_layout.addWidget(self.ui.cpu_affinity_btn, 2, 1)
 
                 # Power Plan Buttons
-                self.ui.high_perf_power_btn = QtWidgets.QPushButton("⚡ ACTIVATE HIGH PERFORMANCE")
+                self.ui.high_perf_power_btn = QtWidgets.QPushButton("⚡ HIGH PERFORMANCE")
                 self.ui.high_perf_power_btn.setMinimumHeight(btn_h)
-                system_layout.addWidget(self.ui.high_perf_power_btn)
+                grid_layout.addWidget(self.ui.high_perf_power_btn, 3, 0)
 
-                self.ui.ultimate_perf_power_btn = QtWidgets.QPushButton("💎 ACTIVATE ULTIMATE PERFORMANCE")
+                self.ui.ultimate_perf_power_btn = QtWidgets.QPushButton("💎 ULTIMATE PERFORMANCE")
                 self.ui.ultimate_perf_power_btn.setMinimumHeight(btn_h)
                 self.ui.ultimate_perf_power_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ffcc00, stop:1 #ff00ff); color: #000; font-weight: 900;")
-                system_layout.addWidget(self.ui.ultimate_perf_power_btn)
+                grid_layout.addWidget(self.ui.ultimate_perf_power_btn, 3, 1)
 
                 # RAM Cleaner Button
-                self.ui.ram_cleaner_btn = QtWidgets.QPushButton("🧹 CLEAN RAM STANDBY LIST")
+                self.ui.ram_cleaner_btn = QtWidgets.QPushButton("🧹 CLEAN RAM STANDBY")
                 self.ui.ram_cleaner_btn.setMinimumHeight(btn_h)
                 self.ui.ram_cleaner_btn.setStyleSheet("background: #1a0033; border: 2px solid #ff00ff;")
-                system_layout.addWidget(self.ui.ram_cleaner_btn)
+                grid_layout.addWidget(self.ui.ram_cleaner_btn, 4, 0)
 
                 # Ping Stabilizer Button
-                self.ui.ping_stab_btn = QtWidgets.QPushButton("📡 STABILIZE PING (NETWORK PRIORITY)")
+                self.ui.ping_stab_btn = QtWidgets.QPushButton("📡 STABILIZE PING")
                 self.ui.ping_stab_btn.setMinimumHeight(btn_h)
                 self.ui.ping_stab_btn.setStyleSheet("background: #004d00; border: 2px solid #00ff00;")
-                system_layout.addWidget(self.ui.ping_stab_btn)
+                grid_layout.addWidget(self.ui.ping_stab_btn, 4, 1)
                 
                 exp_spacer = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
                 system_layout.addItem(exp_spacer)
+                
+                # --- PROFILES FOR GFX PAGE ---
+                self.ui.save_profile_btn = QtWidgets.QPushButton("💾 SAVE PROFILE", self.ui.gfx_page)
+                self.ui.save_profile_btn.setGeometry(QtCore.QRect(680, 580, 130, 51))
+                self.ui.save_profile_btn.setStyleSheet("background: #003366; color: white;")
+                self.ui.save_profile_btn.setFont(self.ui.submit_gfx_btn.font())
+                self.ui.save_profile_btn.show()
+
+                self.ui.load_profile_btn = QtWidgets.QPushButton("📂 LOAD PROFILE", self.ui.gfx_page)
+                self.ui.load_profile_btn.setGeometry(QtCore.QRect(820, 580, 130, 51))
+                self.ui.load_profile_btn.setStyleSheet("background: #330033; color: white;")
+                self.ui.load_profile_btn.setFont(self.ui.submit_gfx_btn.font())
+                self.ui.load_profile_btn.show()
+
                 
                 self.ui.stackedWidget.addWidget(self.ui.system_page)
                 

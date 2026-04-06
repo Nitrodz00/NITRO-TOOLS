@@ -140,12 +140,81 @@ class GFX(QObject):
         self.ui.disable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.disable_shadow_btn))
         self.ui.enable_shadow_btn.clicked.connect(lambda: self.check_button_selected(self.shadow_buttons, self.ui.enable_shadow_btn))
 
+        # Profile connections
+        if hasattr(self.ui, "save_profile_btn"):
+            self.ui.save_profile_btn.clicked.connect(self.save_profile)
+        if hasattr(self.ui, "load_profile_btn"):
+            self.ui.load_profile_btn.clicked.connect(self.load_profile)
+
+
     def gfx_submit_button_click(self):
 
         self.ui.submit_gfx_btn.setEnabled(False)
         self.worker_submit = SubmitWorkerThread(self.app, self.ui, self)
         self.worker_submit.task_completed.connect(self.submit_gfx_done)
         self.worker_submit.start()
+
+    def save_profile(self):
+        import json
+        import os
+        
+        # Determine current selections
+        checked_graphics = next((b.text() for b in getattr(self, 'graphics_buttons', []) if b.isChecked()), "")
+        checked_fps = next((b.text() for b in getattr(self, 'fps_buttons', []) if b.isChecked()), "")
+        checked_style = next((b.property("styleId") for b in getattr(self, 'style_buttons', []) if b.isChecked()), "")
+        checked_shadow = next((b.text() for b in getattr(self, 'shadow_buttons', []) if b.isChecked()), "")
+        
+        if not any([checked_graphics, checked_fps, checked_style]):
+            self.app.show_status_message("Select some settings first to save a profile.")
+            return
+            
+        prof = {
+            "graphics": checked_graphics,
+            "fps": checked_fps,
+            "style": checked_style.decode('utf-8') if isinstance(checked_style, bytes) else checked_style,
+            "shadow": checked_shadow
+        }
+        
+        try:
+            with open("nitro_profile.json", "w") as f:
+                json.dump(prof, f)
+            self.app.show_status_message("✅ PROFILE SAVED SUCCESSFULLY! Your custom config is stored.", 5)
+        except Exception:
+            self.app.show_status_message("Failed to save profile.")
+
+    def load_profile(self):
+        import json
+        import os
+        if not os.path.exists("nitro_profile.json"):
+            self.app.show_status_message("No saved custom profile found on this PC.")
+            return
+            
+        try:
+            with open("nitro_profile.json", "r") as f:
+                prof = json.load(f)
+                
+            # Apply to UI
+            if "graphics" in prof and hasattr(self, 'graphics_buttons'):
+                for b in self.graphics_buttons:
+                    b.setChecked(b.text() == prof["graphics"])
+                    
+            if "fps" in prof and hasattr(self, 'fps_buttons'):
+                for b in self.fps_buttons:
+                    b.setChecked(b.text() == prof["fps"])
+                    
+            if "style" in prof and hasattr(self, 'style_buttons'):
+                for b in self.style_buttons:
+                    b_style = b.property("styleId")
+                    b_style = b_style.decode('utf-8') if isinstance(b_style, bytes) else b_style
+                    b.setChecked(b_style == prof["style"])
+                    
+            if "shadow" in prof and hasattr(self, 'shadow_buttons'):
+                for b in self.shadow_buttons:
+                    b.setChecked(b.text() == prof["shadow"])
+                    
+            self.app.show_status_message("📂 PROFILE LOADED! Press 'Submit' to apply these settings.", 6)
+        except Exception:
+            self.app.show_status_message("Failed to load profile. The file might be corrupted.")
 
     def submit_gfx_done(self):
         self.ui.submit_gfx_btn.setEnabled(True)

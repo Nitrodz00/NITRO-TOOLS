@@ -9,8 +9,8 @@ class SystemTweaks(QObject):
         self.ui = window.ui
         
         # We initialized programmatically in ui_functions.py _fix_ui_layouts
-        # Now we connect the buttons
         self.setup_connections()
+        self.hotkeys_active = False
 
     def setup_connections(self):
         # These buttons were created in ui_functions.py _fix_ui_layouts
@@ -26,6 +26,71 @@ class SystemTweaks(QObject):
             self.ui.ram_cleaner_btn.clicked.connect(self.activate_ram_cleaner)
         if hasattr(self.ui, 'ping_stab_btn'):
             self.ui.ping_stab_btn.clicked.connect(self.activate_ping_stabilizer)
+        if hasattr(self.ui, 'ai_optimizer_btn'):
+            self.ui.ai_optimizer_btn.clicked.connect(self.run_ai_optimizer)
+        if hasattr(self.ui, 'hotkeys_btn'):
+            self.ui.hotkeys_btn.clicked.connect(self.toggle_hotkeys)
+
+    def run_ai_optimizer(self):
+        import psutil
+        total_ram = psutil.virtual_memory().total / (1024 ** 3)
+        cores = psutil.cpu_count(logical=False) or 4
+        
+        self.app.show_status_message(f"AI Scan: {total_ram:.1f}GB RAM, {cores} Cores. Optimizing...")
+        
+        # Reset current UI choices
+        for btn in self.app.gfx.graphics_buttons + self.app.gfx.framerate_buttons + self.app.gfx.style_buttons:
+            btn.setChecked(False)
+            
+        # Decision Logic
+        if total_ram < 7.5:
+            # Low End
+            self.ui.smooth_graphics_btn.setChecked(True)
+            self.ui.extreme_fps_btn.setChecked(True)
+            self.ui.classic_style_btn.setChecked(True)
+            self.ui.disable_shadow_btn.setChecked(True)
+            self.app.optimizer.apply_performance_mode('low')
+        elif total_ram < 15 and cores <= 6:
+            # Mid End
+            self.ui.balanced_graphics_btn.setChecked(True)
+            self.ui.extreme_fps_btn.setChecked(True)
+            self.ui.colorful_style_btn.setChecked(True)
+            self.ui.enable_shadow_btn.setChecked(True)
+            self.app.optimizer.apply_performance_mode('balanced')
+        else:
+            # High End
+            self.ui.hd_graphics_btn.setChecked(True)
+            self.ui.fps120_fps_btn.setChecked(True)
+            self.ui.movie_style_btn.setChecked(True)
+            self.ui.enable_shadow_btn.setChecked(True)
+            self.app.optimizer.apply_performance_mode('competitive')
+            
+        # Apply the checks directly
+        self.app.gfx.run()
+        self.activate_high_priority()
+        self.activate_cpu_affinity()
+        self.app.show_status_message("AI Optimization Complete! GameLoop Set to Optimal.")
+
+    def toggle_hotkeys(self):
+        try:
+            import keyboard
+        except ImportError:
+            self.app.show_status_message("Error: 'keyboard' module not found.")
+            self.ui.hotkeys_btn.setChecked(False)
+            return
+
+        self.hotkeys_active = self.ui.hotkeys_btn.isChecked()
+        if self.hotkeys_active:
+            keyboard.add_hotkey('F8', self.activate_ram_cleaner)
+            keyboard.add_hotkey('F9', self.activate_high_priority)
+            self.ui.hotkeys_btn.setText("⌨️ HOTKEYS ACTIVE (Press F8 or F9 in-game)")
+            self.ui.hotkeys_btn.setStyleSheet("background: #00ff00; color: #000; font-weight: bold;")
+            self.app.show_status_message("In-Game Hotkeys Enabled! (F8=RAM, F9=Priority)")
+        else:
+            keyboard.unhook_all_hotkeys()
+            self.ui.hotkeys_btn.setText("⌨️ ENABLE IN-GAME HOTKEYS (F8 RAM Clean, F9 Auto-Prio)")
+            self.ui.hotkeys_btn.setStyleSheet("background: #330033; border: 1px solid #ff00ff;")
+            self.app.show_status_message("In-Game Hotkeys Disabled.")
 
     def activate_high_priority(self):
         success = self.app.set_process_priority("AndroidEmulatorEn.exe", "high")
