@@ -266,23 +266,19 @@ class Window(QtWidgets.QMainWindow, Game):
                 self.ui.ping_stab_btn.setMinimumHeight(btn_h)
                 self.ui.ping_stab_btn.setStyleSheet("background: #004d00; border: 2px solid #00ff00;")
                 grid_layout.addWidget(self.ui.ping_stab_btn, 4, 1)
-                
+                # --- PROFILES BUTTONS ---
+                self.ui.save_profile_btn = QtWidgets.QPushButton("💾 SAVE CUSTOM PROFILE (All Settings)")
+                self.ui.save_profile_btn.setMinimumHeight(btn_h)
+                self.ui.save_profile_btn.setStyleSheet("background: #003366; color: white;")
+                grid_layout.addWidget(self.ui.save_profile_btn, 5, 0)
+
+                self.ui.load_profile_btn = QtWidgets.QPushButton("📂 LOAD CUSTOM PROFILE")
+                self.ui.load_profile_btn.setMinimumHeight(btn_h)
+                self.ui.load_profile_btn.setStyleSheet("background: #330033; color: white;")
+                grid_layout.addWidget(self.ui.load_profile_btn, 5, 1)
+
                 exp_spacer = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
                 system_layout.addItem(exp_spacer)
-                
-                # --- PROFILES FOR GFX PAGE ---
-                self.ui.save_profile_btn = QtWidgets.QPushButton("💾 SAVE PROFILE", self.ui.gfx_page)
-                self.ui.save_profile_btn.setGeometry(QtCore.QRect(680, 580, 130, 51))
-                self.ui.save_profile_btn.setStyleSheet("background: #003366; color: white;")
-                self.ui.save_profile_btn.setFont(self.ui.submit_gfx_btn.font())
-                self.ui.save_profile_btn.show()
-
-                self.ui.load_profile_btn = QtWidgets.QPushButton("📂 LOAD PROFILE", self.ui.gfx_page)
-                self.ui.load_profile_btn.setGeometry(QtCore.QRect(820, 580, 130, 51))
-                self.ui.load_profile_btn.setStyleSheet("background: #330033; color: white;")
-                self.ui.load_profile_btn.setFont(self.ui.submit_gfx_btn.font())
-                self.ui.load_profile_btn.show()
-
                 
                 self.ui.stackedWidget.addWidget(self.ui.system_page)
                 

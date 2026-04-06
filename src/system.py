@@ -39,7 +39,7 @@ class SystemTweaks(QObject):
         self.app.show_status_message(f"AI Scan: {total_ram:.1f}GB RAM, {cores} Cores. Optimizing...")
         
         # Reset current UI choices
-        for btn in self.app.gfx.graphics_buttons + self.app.gfx.framerate_buttons + self.app.gfx.style_buttons:
+        for btn in self.app.gfx.graphics_buttons + self.app.gfx.fps_buttons + self.app.gfx.style_buttons:
             btn.setChecked(False)
             
         # Decision Logic
