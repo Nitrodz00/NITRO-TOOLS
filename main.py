@@ -212,13 +212,31 @@ if __name__ == "__main__":
             pass
         sys.exit(0)
 
-    app = QtWidgets.QApplication(sys.argv)
-    
-    # --- PRO SINGLE INSTANCE CHECK ---
-    _single_instance_lock = QtCore.QSharedMemory("NITROTOOLS_UNIQUE_INSTANCE_ID")
-    if not _single_instance_lock.create(1):
+    # --- PRO SINGLE INSTANCE LOCK (NATIVE WINDOWS MUTEX) ---
+    def check_single_instance():
+        try:
+            # We create a unique system-wide Mutex
+            # If it already exists, Another instance is running
+            mutex_name = "Global\\NITROTOOLS_UNIQUE_MUTEX_ID_v2"
+            handle = ctypes.windll.kernel32.CreateMutexW(None, False, mutex_name)
+            last_error = ctypes.windll.kernel32.GetLastError()
+            
+            # ERROR_ALREADY_EXISTS = 183
+            if last_error == 183:
+                # Release the handle if duplicate
+                if handle:
+                    ctypes.windll.kernel32.CloseHandle(handle)
+                return False
+            # Hold the reference kept alive by the script
+            return handle
+        except Exception:
+            return True # If something fails, let it run anyway
+
+    _lock_handle = check_single_instance()
+    if not _lock_handle:
         sys.exit(0)
-    
+
+    app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(NITRO_STYLESHEET)
 
     icon_path = "assets/icons/logo.ico"
