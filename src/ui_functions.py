@@ -91,9 +91,9 @@ class Window(QtWidgets.QMainWindow, Game):
         self._manual_checker.check_failed.connect(lambda: self.show_status_message("Update check failed. Check internet."))
         self._manual_checker.start()
 
-    def _on_manual_update_avail(self, ver, url, name, size):
+    def _on_manual_update_avail(self, ver, url, name, size, changelog):
         from .update import UpdateWindow
-        self._manual_upd_win = UpdateWindow(ver, url, name, size)
+        self._manual_upd_win = UpdateWindow(ver, url, name, size, changelog)
         self._manual_upd_win.show()
 
     def _init_system_tray(self):
@@ -180,33 +180,23 @@ class Window(QtWidgets.QMainWindow, Game):
             # Position elements SAFELY inside their respective frames with safe font sizes
             label_style = "color: #ffffff; font-weight: bold; background: transparent;"
             
-            # Graphics
-            if hasattr(self.ui, 'graphics_label'): 
-                self.ui.graphics_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
-                self.ui.graphics_label.setStyleSheet(label_style + "font-size: 24px;")
-            if hasattr(self.ui, 'layoutWidget'): 
-                self.ui.layoutWidget.setGeometry(QtCore.QRect(10, 60, 1050, 45))
+            # Graphics — label geometry fixed in ui.py (y=5, w=200)
+            if hasattr(self.ui, 'layoutWidget'):
+                self.ui.layoutWidget.setGeometry(QtCore.QRect(11, 55, 1060, 50))
             
-            # Framerate
-            if hasattr(self.ui, 'fps_label'): 
-                self.ui.fps_label.setGeometry(QtCore.QRect(10, 5, 400, 40))
-                self.ui.fps_label.setStyleSheet(label_style + "font-size: 24px;")
-            if hasattr(self.ui, 'layoutWidget1'): 
-                self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 60, 1050, 45))
+            # Framerate — label geometry fixed in ui.py (y=5, w=200)
+            if hasattr(self.ui, 'layoutWidget1'):
+                self.ui.layoutWidget1.setGeometry(QtCore.QRect(10, 55, 1060, 50))
             
-            # Shadow
-            if hasattr(self.ui, 'shadow_label'): 
-                self.ui.shadow_label.setGeometry(QtCore.QRect(10, 2, 400, 35))
-                self.ui.shadow_label.setStyleSheet(label_style + "font-size: 20px;") 
-            if hasattr(self.ui, 'layoutWidget_2'): 
-                self.ui.layoutWidget_2.setGeometry(QtCore.QRect(10, 50, 400, 50))
+            # Shadow — geometry fixed in ui.py (setMinimumHeight=120, label y=5)
+            # No override needed here, the frame expands correctly.
             
             # Resolution
             if hasattr(self.ui, 'resolution_label'):
-                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 2, 400, 35))
-                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 20px;") 
+                self.ui.resolution_label.setGeometry(QtCore.QRect(10, 5, 250, 40))
+                self.ui.resolution_label.setStyleSheet(label_style + "font-size: 20px;")
             if hasattr(self.ui, 'resolution_btn'):
-                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 50, 220, 50))
+                self.ui.resolution_btn.setGeometry(QtCore.QRect(10, 55, 220, 50))
             
             # --- PROGRAMMATICALLY ADD SYSTEM PAGE ---
             if not hasattr(self.ui, 'system_page'):
