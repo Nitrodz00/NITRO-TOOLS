@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.4.2"
+APP_VERSION = "v2.4.3"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -177,13 +177,16 @@ def on_update_available(latest_version, download_url, asset_name, size, changelo
 def run_application():
     global _main_window
     try:
+        from src.ui_functions import Window
         _main_window = Window(APP_NAME, APP_VERSION)
         _main_window.show()
         return _main_window
     except Exception as e:
         import traceback
-        error_msg = f"Application failed to start:\n{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-        QtWidgets.QMessageBox.critical(None, "Startup Error", error_msg)
+        error_info = traceback.format_exc()
+        msg = f"CRITICAL STARTUP ERROR:\n\n{str(e)}\n\n{error_info}"
+        # Native Windows MessageBoxW (Type 0x10 is MB_ICONERROR)
+        ctypes.windll.user32.MessageBoxW(0, msg, "NITROTOOLS ENGINE ERROR", 0x10)
         sys.exit(1)
 
 
