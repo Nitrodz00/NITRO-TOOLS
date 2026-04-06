@@ -66,7 +66,7 @@ class SystemTweaks(QObject):
             self.app.optimizer.apply_performance_mode('competitive')
             
         # Apply the checks directly
-        self.app.gfx.run()
+        self.app.gfx.gfx_submit_button_click()
         self.activate_high_priority()
         self.activate_cpu_affinity()
         self.app.show_status_message("AI Optimization Complete! GameLoop Set to Optimal.")

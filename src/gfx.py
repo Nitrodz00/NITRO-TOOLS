@@ -126,8 +126,42 @@ class GFX(QObject):
         self.ui.PubgchooseFrame.hide()
 
         self.graphics_buttons_func()
-        self.fps_buttons_func()
         self.style_buttons_func()
+
+        self.graphics_buttons = [
+            self.ui.super_smooth_graphics_btn,
+            self.ui.smooth_graphics_btn,
+            self.ui.balanced_graphics_btn,
+            self.ui.hd_graphics_btn,
+            self.ui.hdr_graphics_btn,
+            self.ui.ultrahd_graphics_btn,
+        ]
+        self.fps_buttons = [
+            self.ui.low_fps_btn,
+            self.ui.medium_fps_btn,
+            self.ui.high_fps_btn,
+            self.ui.ultra_fps_btn,
+            self.ui.extreme_fps_btn,
+            self.ui.fps90_fps_btn,
+            self.ui.fps120_fps_btn
+        ]
+        self.style_buttons = [
+            self.ui.classic_style_btn,
+            self.ui.colorful_style_btn,
+            self.ui.realistic_style_btn,
+            self.ui.soft_style_btn,
+            self.ui.movie_style_btn
+        ]
+        
+        battle_style_dict = {
+            b'\x01': "Classic",
+            b'\x02': "Colorful",
+            b'\x03': "Realistic",
+            b'\x04': "Soft",
+            b'\x06': "Movie"
+        }
+        for button, style_id in zip(self.style_buttons, battle_style_dict.values()):
+            button.setProperty("styleId", style_id)
 
         self.gfx_buttons(enabled=False)
 
@@ -297,17 +331,6 @@ class GFX(QObject):
             self.ui.soft_style_btn,
             self.ui.movie_style_btn
         ]
-        battle_style_dict = {
-            b'\x01': "Classic",
-            b'\x02': "Colorful",
-            b'\x03': "Realistic",
-            b'\x04': "Soft",
-            b'\x06': "Movie"
-        }
-
-        for button, style_id in zip(self.style_buttons, battle_style_dict.values()):
-            button.setProperty("styleId", style_id)
-
         self.style_value = self.app.get_graphics_style()
 
         for button in self.style_buttons:
