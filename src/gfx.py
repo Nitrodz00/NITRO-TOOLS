@@ -113,10 +113,8 @@ class GFX(QObject):
     def __init__(self, window):
         super(GFX, self).__init__()
 
-        from .ui import Ui_MainWindow
-        from .ui_functions import Window
-        self.ui: Ui_MainWindow = window.ui
-        self.app: Window = window
+        self.ui = window.ui
+        self.app = window
 
         self.graphics_buttons_func()
         self.fps_buttons_func()
@@ -141,6 +139,10 @@ class GFX(QObject):
             self.ui.save_profile_btn.clicked.connect(self.save_profile)
         if hasattr(self.ui, "load_profile_btn"):
             self.ui.load_profile_btn.clicked.connect(self.load_profile)
+
+    def call_app(self):
+        """Reference to the main application window."""
+        return self.app
 
 
     def gfx_submit_button_click(self):
