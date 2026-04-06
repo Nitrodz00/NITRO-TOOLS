@@ -38,7 +38,6 @@ class MonitorStats(QThread):
             estimated *= (1.0 - (cpu_process_load / 400.0)) # Reduce if CPU bottleneck
         
         # Add slight realistic fluctuation (+/- 2 FPS) if active
-        import random  # noqa — kept for now in case random needed elsewhere
         if estimated > 10:
             estimated += random.uniform(-2, 2)
             
@@ -53,6 +52,8 @@ class MonitorStats(QThread):
                     "ram_percent": psutil.virtual_memory().percent,
                     "ram_used_gb": round(psutil.virtual_memory().used / (1024**3), 2),
                     "gpu_percent": 0.0,
+                    "gpu_temp": 0,
+                    "cpu_temp": 0,
                     "fps": 0
                 }
                 
@@ -66,6 +67,16 @@ class MonitorStats(QThread):
                         stats["gpu_percent"] = float(parts[0].strip())
                         stats["gpu_temp"] = int(parts[1].strip())
                 except Exception:
+                    pass
+
+                # CPU Temperature (if available)
+                try:
+                    import wmi
+                    w = wmi.WMI()
+                    temp_info = w.query("SELECT * FROM Win32_TemperatureProbe")
+                    if temp_info:
+                        stats["cpu_temp"] = temp_info[0].CurrentReading / 10  # Convert to Celsius
+                except:
                     pass
 
                 # Get GameLoop process CPU usage for FPS estimation

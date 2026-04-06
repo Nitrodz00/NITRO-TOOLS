@@ -33,7 +33,21 @@ class SystemOptimizer:
                 stats["gpu_name"] = name.strip()
                 stats["vram_mb"] = float(vram.strip())
         except:
-            pass
+            # Try AMD GPU detection
+            try:
+                cmd = ["wmic", "path", "win32_videocontroller", "get", "name,memorytype", "/format:csv"]
+                out = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW).stdout
+                lines = out.strip().split('\n')
+                if len(lines) > 1:
+                    parts = lines[1].split(',')
+                    if len(parts) >= 2:
+                        gpu_name = parts[0].strip()
+                        if 'amd' in gpu_name.lower() or 'radeon' in gpu_name.lower():
+                            stats["gpu_name"] = gpu_name
+                            # VRAM estimation (rough)
+                            stats["vram_mb"] = 4096  # Default assumption
+            except:
+                pass
             
         return stats
 

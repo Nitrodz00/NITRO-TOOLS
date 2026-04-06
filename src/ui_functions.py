@@ -370,8 +370,8 @@ class Window(QtWidgets.QMainWindow, Game):
         elif fps >= 55: color = "#ffff00"
         else: color = "#ff4d4d"
         self.header_fps_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: 900; font-family: 'Agency FB';")
-        self.header_cpu_label.setText(f"CPU: {int(stats['cpu_percent'])}%")
-        self.header_gpu_label.setText(f"GPU: {int(stats['gpu_percent'])}%")
+        self.header_cpu_label.setText(f"CPU: {int(stats['cpu_percent'])}% | {int(stats.get('cpu_temp', 0))}°C")
+        self.header_gpu_label.setText(f"GPU: {int(stats['gpu_percent'])}% | {int(stats.get('gpu_temp', 0))}°C")
         self.header_ram_label.setText(f"RAM: {int(stats['ram_percent'])}%")
         
         # Evaluate stats with AI (Part 2 - Dynamic Optimization)
@@ -386,9 +386,21 @@ class Window(QtWidgets.QMainWindow, Game):
     def _on_game_detected(self, running: bool):
         if running:
             self.show_status_message("GameLoop Detected - Auto-Boost Activated!", duration=10)
+            self.tray_icon.showMessage(
+                "NITROTOOLS",
+                "GameLoop detected! Auto-boost activated.",
+                QtWidgets.QSystemTrayIcon.Information,
+                3000
+            )
             self.optimizer.apply_performance_mode('competitive') # Auto high perf when gaming
         else:
             self.show_status_message("Game Closed - Standing by.")
+            self.tray_icon.showMessage(
+                "NITROTOOLS",
+                "Game closed. Standing by.",
+                QtWidgets.QSystemTrayIcon.Information,
+                2000
+            )
 
     def buttonClicked(self, button, page):
         self.ui.gfx_button.setChecked(button == self.ui.gfx_button)

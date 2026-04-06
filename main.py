@@ -13,37 +13,58 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.4.3"
+APP_VERSION = "v2.5.0"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
-NITRO_STYLESHEET = """
-QMainWindow, QWidget {
+THEMES = {
+    "cosmic": {
+        "gradient": "qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #0d0020, stop:0.5 #1e003c, stop:1 #001220)",
+        "accent": "#ff00ff",
+        "secondary": "#00ffca"
+    },
+    "neon_green": {
+        "gradient": "qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #001a00, stop:0.5 #003300, stop:1 #000a00)",
+        "accent": "#00ff00",
+        "secondary": "#00ffff"
+    },
+    "red_alert": {
+        "gradient": "qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #1a0000, stop:0.5 #330000, stop:1 #0a0000)",
+        "accent": "#ff0000",
+        "secondary": "#ffaa00"
+    }
+}
+
+CURRENT_THEME = "cosmic"
+
+def get_stylesheet(theme_name="cosmic"):
+    theme = THEMES.get(theme_name, THEMES["cosmic"])
+    return """
+QMainWindow, QWidget {{
     background-color: transparent;
     color: #f0f0ff;
     font-family: 'Segoe UI Semibold', 'Agency FB', sans-serif;
-}
+}}
 
-/* Base Window - Deep Cosmic Gradient */
-#centralwidget {
-    background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, 
-        stop:0 #0d0020, stop:0.5 #1e003c, stop:1 #001220);
-    border: 1px solid #4d0099;
-}
+/* Base Window - {0} Gradient */
+#centralwidget {{
+    background: {1};
+    border: 1px solid {2};
+}}
 
 /* Make background images subtle and atmospheric */
-#appbackground, #gfx_page_background, #other_page_background, #label_8 {
+#appbackground, #gfx_page_background, #other_page_background, #label_8 {{
     background-color: rgba(20, 0, 40, 0.4); /* Glass overlay */
     border: none;
-}
+}}
 
 /* Sidebar - Elegant and Slim */
-#PagesFrame {
+#PagesFrame {{
     background-color: rgba(0, 0, 0, 0.3);
     border-left: 1px solid rgba(204, 0, 255, 0.3);
-}
+}}
 
-#PagesFrame QPushButton {
+#PagesFrame QPushButton {{
     background-color: transparent;
     border: none;
     border-right: 3px solid transparent;
@@ -52,107 +73,109 @@ QMainWindow, QWidget {
     font-weight: 800;
     padding: 15px;
     text-transform: uppercase;
-}
+}}
 
-#PagesFrame QPushButton:hover {
+#PagesFrame QPushButton:hover {{
     color: #ffffff;
     background-color: rgba(204, 0, 255, 0.1);
-    border-right: 3px solid #ff00ff;
-}
+    border-right: 3px solid {2};
+}}
 
-#PagesFrame QPushButton:checked {
-    color: #00ffca;
+#PagesFrame QPushButton:checked {{
+    color: {3};
     background-color: rgba(0, 255, 202, 0.1);
-    border-right: 4px solid #00ffca;
-}
+    border-right: 4px solid {3};
+}}
 
 /* Header Dashboard Stats */
-QFrame#MonitorFrame {
+QFrame#MonitorFrame {{
     background-color: rgba(30, 0, 60, 0.5);
-    border: 1px solid #7c00f0;
+    border: 1px solid {2};
     border-radius: 12px;
-}
+}}
 
-#appname_label {
+#appname_label {{
     color: #ffffff;
     font-size: 18pt;
     font-weight: 900;
     letter-spacing: 2px;
     background: transparent;
-}
+}}
 
 /* Header Text Labels Padding */
-QLabel#fps_label, QLabel#cpu_label, QLabel#gpu_label, QLabel#ram_label {
+QLabel#fps_label, QLabel#cpu_label, QLabel#gpu_label, QLabel#ram_label {{
     padding-bottom: 2px;
-}
+}}
 
 /* High-Performance Modern Buttons - Harmonious Palette */
-QPushButton {
+QPushButton {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
-        stop:0 #5c27fe, stop:1 #c165ff);
+        stop:0 {2}, stop:1 {3});
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     color: #ffffff;
     font-weight: 700;
     font-size: 11pt;
     padding: 8px;
-}
+}}
 
-QPushButton:hover {
+QPushButton:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
         stop:0 #4a1edb, stop:1 #af4dff);
-    border: 1px solid #00f0ff;
-}
+    border: 1px solid {3};
+}}
 
-QPushButton:checked {
-    background: #00ffca;
+QPushButton:checked {{
+    background: {3};
     color: #000000;
     border: 2px solid #ffffff;
-}
+}}
 
-QPushButton:disabled {
+QPushButton:disabled {{
     background: #101020;
     color: #3b3b5c;
     border: 1px solid #1c1c3c;
-}
+}}
 
 /* Specialized Force Close Button */
-QPushButton#forceclosegl_other_btn {
+QPushButton#forceclosegl_other_btn {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff0000, stop:1 #8b0000);
-}
+}}
 
 /* Dropdowns & Inputs */
-QComboBox {
+QComboBox {{
     background-color: #0d0020;
-    border: 1px solid #7c00f0;
+    border: 1px solid {2};
     border-radius: 6px;
     padding: 8px;
-    color: #00ffca;
+    color: {3};
     font-weight: bold;
-}
+}}
 
-QComboBox::drop-down {
-    border-left: 1px solid #7c00f0;
+QComboBox::drop-down {{
+    border-left: 1px solid {2};
     width: 25px;
-}
+}}
 
-QComboBox QAbstractItemView {
+QComboBox QAbstractItemView {{
     background-color: #0d0020;
-    border: 1px solid #7c00f0;
-    selection-background-color: #7c00f0;
-}
+    border: 1px solid {2};
+    selection-background-color: {2};
+}}
 
 /* Labels and Content */
-QLabel {
+QLabel {{
     background: transparent;
     color: #ffffff;
-}
+}}
 
-#appstatus_text_lable {
-    color: #00ffca;
+#appstatus_text_lable {{
+    color: {3};
     font-weight: bold;
-}
-"""
+}}
+""".format(theme_name.title(), theme['gradient'], theme['accent'], theme['secondary'])
+
+NITRO_STYLESHEET = get_stylesheet(CURRENT_THEME)
 
 
 # Update check: GET GitHub Releases API (needs internet). If offline, blocked, or no Releases

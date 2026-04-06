@@ -1,6 +1,8 @@
 import json
 import os
 from .optimizer import SystemOptimizer
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 class AIDynamicOptimizer:
     """
@@ -13,6 +15,9 @@ class AIDynamicOptimizer:
         self.performance_history = self._load_history()
         self.last_mode = "balanced"
         self.consecutive_stutter = 0
+        self.model = LinearRegression()
+        self.trained = False
+        self._train_model()
 
     def _load_history(self):
         if os.path.exists(self.history_file):
@@ -28,14 +33,36 @@ class AIDynamicOptimizer:
                 json.dump(self.performance_history, f)
         except: pass
 
+    def _train_model(self):
+        """Train ML model on performance history."""
+        if not self.performance_history:
+            return
+        X = []
+        y = []
+        for hw, data in self.performance_history.items():
+            if "best_fps" in data:
+                # Simple features: cpu_load, gpu_load
+                X.append([data.get("cpu_load", 50), data.get("gpu_load", 50)])
+                y.append(data["best_fps"])
+        if len(X) > 1:
+            self.model.fit(np.array(X), np.array(y))
+            self.trained = True
+
     def evaluate(self, stats: dict):
         """
-        Real-Time Decision Engine.
-        Analyzes FPS, CPU, and GPU load to predict the best optimization mode.
+        Real-Time Decision Engine with ML prediction.
         """
         fps = stats.get("fps", 0)
         cpu = stats.get("cpu_percent", 0)
         gpu = stats.get("gpu_percent", 0)
+        
+        # ML Prediction
+        predicted_fps = fps
+        if self.trained:
+            try:
+                predicted_fps = self.model.predict(np.array([[cpu, gpu]]))[0]
+            except:
+                pass
         
         # 1. Detection of 'Performance Health'
         is_stuttering = fps < 45 and cpu > 85
@@ -43,7 +70,7 @@ class AIDynamicOptimizer:
         
         target_mode = self.last_mode
         
-        # 2. Decision Logic
+        # 2. Decision Logic with ML insight
         if is_stuttering:
             self.consecutive_stutter += 1
             if self.consecutive_stutter >= 3: # Persistent bottleneck
@@ -70,6 +97,7 @@ class AIDynamicOptimizer:
                 "gpu_load": gpu
             }
             self._save_history()
+            self._train_model()  # Retrain with new data
 
     def get_smart_suggestion(self):
         """Adaptive Learning output."""

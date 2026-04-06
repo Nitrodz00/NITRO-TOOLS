@@ -12,5 +12,6 @@ requests
 WMI
 winshell
 keyboard
+scikit-learn
 
 

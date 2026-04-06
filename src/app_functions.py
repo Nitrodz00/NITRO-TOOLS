@@ -92,7 +92,8 @@ class Registry(Settings):
             with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self.REG_PATH) as registry_key:
                 winreg.SetValueEx(registry_key, name, 0, winreg.REG_DWORD, value)
             return True
-        except WindowsError:
+        except (WindowsError, OSError) as e:
+            self.logger.error(f"Registry set_dword failed: {e}")
             return False
 
 

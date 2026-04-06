@@ -254,6 +254,18 @@ class UpdateWindow(QMainWindow):
     def _on_complete(self, path: str):
         """Download succeeded. Launch the new EXE using a batch script so the
         current process can exit fully before the installer/new EXE starts."""
+        # File integrity check
+        try:
+            downloaded_size = os.path.getsize(path)
+            expected_size_mb = float(self.size.split()[0])
+            expected_size = expected_size_mb * 1024 * 1024
+            if abs(downloaded_size - expected_size) > 1024:  # Allow 1KB tolerance
+                self._on_failed(f"File integrity check failed. Expected {expected_size_mb}MB, got {downloaded_size / (1024*1024):.2f}MB.")
+                return
+        except Exception as e:
+            self._on_failed(f"Integrity check error: {e}")
+            return
+
         self._downloaded_path = path
         self.title_label.setText("✅  Download complete! Launching new version...")
         self.status_label.setText("Starting new version. This window will close.")

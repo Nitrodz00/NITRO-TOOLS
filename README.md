@@ -70,6 +70,8 @@ To build EXE locally (same output as CI):
 ```
 Or: `pip install -r requirements-build.txt` then `pyinstaller NITROTOOLS_RELEASE.spec` (set `PYINSTALLER_EXE_NAME` if you need a custom file name).
 
+**Latest Release: v2.4.4** - Improved stability and minor bug fixes.
+
 ---
 
 ## 📋 Requirements
