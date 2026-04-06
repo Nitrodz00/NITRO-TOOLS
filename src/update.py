@@ -274,9 +274,6 @@ class UpdateWindow(QMainWindow):
         # In-place update: Write a batch script to replace the current EXE and restart
         bat_path = os.path.join(tempfile.gettempdir(), "nitro_update_launcher.bat")
         current_exe = sys.executable
-        new_exe_name = self.asset_name if self.asset_name.lower().endswith(".exe") else f"{self.asset_name}.exe"
-        new_exe_path = os.path.join(os.path.dirname(current_exe), new_exe_name)
-        
         try:
             with open(bat_path, "w") as bat:
                 bat.write('@echo off\n')
@@ -288,15 +285,8 @@ class UpdateWindow(QMainWindow):
                 bat.write('  set /a count+=1\n')
                 bat.write('  if %count% LSS 10 goto wait_loop\n') # try 10 times
                 bat.write(')\n')
-                
-                # Check if we are renaming or just overwriting
-                if current_exe.lower() != new_exe_path.lower():
-                    bat.write(f'move /Y "{path}" "{new_exe_path}" >nul\n')
-                    bat.write(f'start "" "{new_exe_path}"\n')
-                else:
-                    bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
-                    bat.write(f'start "" "{current_exe}"\n')
-                
+                bat.write(f'move /Y "{path}" "{current_exe}" >nul\n')
+                bat.write(f'start "" "{current_exe}"\n')
                 bat.write('del "%~f0"\n')   # self-delete the bat after launch
 
             subprocess.Popen(['cmd', '/c', bat_path],
