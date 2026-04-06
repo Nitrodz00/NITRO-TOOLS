@@ -12,6 +12,8 @@ requests
 WMI
 winshell
 keyboard
+numpy
+scipy
 scikit-learn
 
 
