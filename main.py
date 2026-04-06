@@ -2,8 +2,10 @@ import ctypes
 import sys
 
 # PyInstaller onefile: adbutils imports pkg_resources before graph analysis sees it — force bundle
-import pkg_resources  # noqa: F401
-import setuptools  # noqa: F401
+try:
+    import pkg_resources
+except ImportError:
+    pass
 
 from src.ui_functions import Window, QtWidgets
 from src.update import UpdateWindow, CheckUpdateThread
@@ -11,7 +13,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.4.1"
+APP_VERSION = "v2.4.2"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -174,9 +176,15 @@ def on_update_available(latest_version, download_url, asset_name, size, changelo
 
 def run_application():
     global _main_window
-    _main_window = Window(APP_NAME, APP_VERSION)
-    _main_window.show()
-    return _main_window
+    try:
+        _main_window = Window(APP_NAME, APP_VERSION)
+        _main_window.show()
+        return _main_window
+    except Exception as e:
+        import traceback
+        error_msg = f"Application failed to start:\n{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+        QtWidgets.QMessageBox.critical(None, "Startup Error", error_msg)
+        sys.exit(1)
 
 
 def check_updates_silently():
