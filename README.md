@@ -10,7 +10,11 @@
 
 ---
 
-## 🚀 Latest Features (v2.5.0)
+## 🚀 Latest Features (v3.0.2)
+
+### 🛠️ Core Graphics & Shortcuts Fix
+- **Shadow Binary Patching:** New advanced logic for `Active.sav` and `UserCustom.ini` ensuring shadow toggles actually work in-game.
+- **Improved Shortcuts:** Fixed "Failed to start emulator" error by correctly setting the `WorkingDirectory` for GameLoop links.
 
 ### 🔒 Enhanced Security & Stability
 - **File Integrity Checks:** Automatic verification of update downloads
@@ -100,7 +104,7 @@ To build EXE locally (same output as CI):
 ```
 Or: `pip install -r requirements-build.txt` then `pyinstaller NITROTOOLS_RELEASE.spec` (set `PYINSTALLER_EXE_NAME` if you need a custom file name).
 
-**Latest Release: v2.5.0** - Major enhancements including ML-powered AI, thermal management, multiple themes, and improved security.
+**Latest Release: v3.0.2** - Major binary shadow fix, robust GameLoop shortcut creation, and improved automation for all emulator versions.
 
 ---
 

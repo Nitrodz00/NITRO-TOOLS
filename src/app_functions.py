@@ -135,35 +135,40 @@ class Optimizer(Registry):
         except Exception:
             pass
 
-    def set_process_priority(self, process_name, priority="high"):
-        """Sets the CPU priority for a specific process (e.g., AndroidEmulatorEn.exe)"""
+    def set_process_priority(self, priority="high"):
+        """Sets the CPU priority for GameLoop processes (targets all known variants)"""
+        process_names = ['AndroidEmulatorEn.exe', 'AndroidEmulatorEx.exe', 'AndroidEmulator.exe', 'aow_exe.exe']
         priority_map = {
             "high": psutil.HIGH_PRIORITY_CLASS,
             "above_normal": psutil.ABOVE_NORMAL_PRIORITY_CLASS,
             "realtime": psutil.REALTIME_PRIORITY_CLASS
         }
+        success = False
         try:
             for proc in psutil.process_iter(['name']):
-                if proc.info['name'].lower() == process_name.lower():
+                if proc.info['name'] in process_names:
                     p = psutil.Process(proc.pid)
                     p.nice(priority_map.get(priority, psutil.HIGH_PRIORITY_CLASS))
-            return True
+                    success = True
+            return success
         except Exception as e:
-            self.logger.error(f"Failed to set priority for {process_name}: {str(e)}")
+            self.logger.error(f"Failed to set priority: {str(e)}")
             return False
 
-    def set_cpu_affinity(self, process_name, cores=None):
-        """Sets CPU affinity for a process (e.g., only use cores 4,5,6,7 to avoid OS jitter)"""
+    def set_cpu_affinity(self, cores=None):
+        """Sets CPU affinity for GameLoop processes (targets all known variants)"""
+        process_names = ['AndroidEmulatorEn.exe', 'AndroidEmulatorEx.exe', 'AndroidEmulator.exe', 'aow_exe.exe']
+        success = False
         try:
             for proc in psutil.process_iter(['name']):
-                if proc.info['name'].lower() == process_name.lower():
+                if proc.info['name'] in process_names:
                     p = psutil.Process(proc.pid)
                     if cores is None:
-                        # Default: Use all cores
                         p.cpu_affinity(list(range(psutil.cpu_count())))
                     else:
                         p.cpu_affinity(cores)
-            return True
+                    success = True
+            return success
         except Exception as e:
             self.logger.error(f"Affinity Error: {str(e)}")
             return False
@@ -823,26 +828,35 @@ class Game(Optimizer):
                 return False
                 
             path_icon = os.path.join(desktop, f"{game_name}.lnk")
-            target = os.path.join(gameloop_ui_path, "AndroidEmulatorEn.exe")
-            if not os.path.exists(target):
-                # Fallback to standard names
-                target = os.path.join(gameloop_ui_path, "AndroidEmulator.exe")
+            
+            # Target selection logic - AppMarket is often more stable for -startpkg
+            targets = ["AndroidEmulatorEn.exe", "AndroidEmulator.exe", "AppMarket.exe"]
+            target = None
+            for t in targets:
+                potential_target = os.path.join(gameloop_ui_path, t)
+                if os.path.exists(potential_target):
+                    target = potential_target
+                    break
+            
+            if not target:
+                self.logger.error("No valid GameLoop executable found for shortcut.")
+                return False
 
             icon_source = self.resource_path(fr"assets\icons\{version_id}.ico")
             icon_dest = os.path.join(gameloop_ui_path, f"{version_id}.ico")
             
-            # Try to copy icon, if permission fails, use local path or skip
             try:
                 if os.path.exists(icon_source):
                     copy(icon_source, icon_dest)
                 else:
-                    icon_dest = icon_source # Use local if possible
-            except Exception as e:
-                self.logger.warning(f"Could not copy icon to gameloop path: {str(e)}")
-                icon_dest = icon_source # Use source as fallback
+                    icon_dest = icon_source
+            except Exception:
+                icon_dest = icon_source
 
             shortcut = Dispatch('WScript.Shell').CreateShortCut(path_icon)
             shortcut.Targetpath = target
+            # CRITICAL: Setting working directory prevents "Failed to start emulator" error
+            shortcut.WorkingDirectory = gameloop_ui_path 
             shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink"
             shortcut.Description = "By NITRO - NITROTOOLS PUBG MOBILE"
             if os.path.exists(icon_dest):
@@ -1123,29 +1137,41 @@ class Game(Optimizer):
 
         return shadow_name
 
-    # Todo: Make This Function Working
     def set_shadow(self, value):
         """
-        Sets the shadow value in the Active.sav file.
+        Sets the shadow value in both UserCustom.ini and the binary Active.sav content.
         :param value: Shadow value to set ("ON" or "OFF")
         :return: True if successful, False otherwise
         """
+        # 1. Update Active.sav (Binary content in memory)
+        # 0 = OFF, 1 = ON in Active.sav binary properties
+        sav_shadow_val = b'\x01' if value == "ON" else b'\x00'
+        header = b'BattleShadow\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00'
+        
+        if header in self.active_sav_content:
+            before, mid, after = self.active_sav_content.partition(header)
+            # Replace the byte immediately following the header
+            after = sav_shadow_val + after[1:]
+            self.active_sav_content = before + mid + after
 
+        # 2. Update UserCustom.ini (Text file in user_data_dir)
+        # 48 = '0' (Enable/High in some contexts), 49 = '1' (Disable/Low)
+        # For obfuscated keys common in PUBG, 48 is typically the 'higher' or 'ON' state
         shadow_value = {"ON": 48, "OFF": 49}.get(value)
         if shadow_value is None:
             return False
+            
         ini_path = os.path.join(self.user_data_dir, 'user.ini')
         if not os.path.exists(ini_path):
-            # fallback to packaged resource if user copy missing
             try:
                 shutil.copy2(self.resource_path(r"assets\\user.ini"), ini_path)
-            except Exception:
-                pass
+            except Exception: pass
 
         lines = []
         try:
             with open(ini_path, "r", encoding='utf-8') as file:
                 for line in file:
+                    # Target known obfuscated shadow keys
                     if line.strip().startswith("+CVars=0B572A11181D160E280C1815100D0044"):
                         line = f"+CVars=0B572A11181D160E280C1815100D0044{shadow_value}\n"
                     elif line.strip().startswith("+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144"):
@@ -1157,8 +1183,6 @@ class Game(Optimizer):
             return True
         except Exception:
             return False
-
-        return True
 
     def get_graphics_style(self):
         """

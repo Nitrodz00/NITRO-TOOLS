@@ -32,13 +32,13 @@ class SubmitWorkerThread(QThread):
             if self.selected_style:
                 self.app.set_graphics_style(self.selected_style)
 
-            # Persist the modified Active.sav
-            self.app.save_graphics_file()
-
-            # Shadow handling (selected_shadow is objectName or similar)
+            # Shadow handling (MUST be before save_graphics_file to include sav binary changes)
             if self.selected_shadow:
                 shadow_val = "ON" if "enable" in str(self.selected_shadow).lower() else "OFF"
                 self.app.set_shadow(shadow_val)
+
+            # Persist the modified Active.sav content to new.sav
+            self.app.save_graphics_file()
 
             # Push both sav and ini to device to ensure effect
             self.app.push_active_shadow_file()

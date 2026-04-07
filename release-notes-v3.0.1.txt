@@ -1,0 +1,3 @@
+Hotfix v3.0.1 — إصلاح فحص التكامل
+- Added byte-size and SHA256 verification for updater.
+- Attached SHA256 for manual verification.

@@ -100,11 +100,11 @@ class SystemTweaks(QObject):
             self.app.show_status_message("In-Game Hotkeys Disabled.")
 
     def activate_high_priority(self):
-        success = self.app.set_process_priority("AndroidEmulatorEn.exe", "high")
+        success = self.app.set_process_priority(priority="high")
         if success:
             self.app.show_status_message("High Priority set for GameLoop Engine!")
         else:
-            self.app.show_status_message("GameLoop Engine (AndroidEmulatorEn.exe) not running.")
+            self.app.show_status_message("GameLoop Engine processes not found to set priority.")
 
     def activate_high_perf_power(self):
         success = self.app.set_high_performance_power_plan()
@@ -131,11 +131,11 @@ class SystemTweaks(QObject):
             # For 4 cores, use all.
             cores_to_use = list(range(total_cores))
             
-        success = self.app.set_cpu_affinity("AndroidEmulatorEn.exe", cores_to_use)
+        success = self.app.set_cpu_affinity(cores=cores_to_use)
         if success:
             self.app.show_status_message(f"CPU Affinity set: GameLoop restricted to {len(cores_to_use)} gaming cores.")
         else:
-            self.app.show_status_message("GameLoop Engine not running to set affinity.")
+            self.app.show_status_message("GameLoop processes not found to set affinity.")
 
     def activate_ram_cleaner(self):
         success = self.app.clear_standby_list()
