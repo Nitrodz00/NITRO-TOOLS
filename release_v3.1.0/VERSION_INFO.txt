@@ -1,5 +1,5 @@
 ﻿NITROTOOLS PUBG MOBILE
 Version: v3.1.0
-Build Date: 2026-04-07 17:55:13
+Build Date: 2026-04-07 20:05:56
 Build Type: Professional Grade Release
 Features: Expert Mode, AMD Support, Enhanced Monitoring, Compatibility Manager

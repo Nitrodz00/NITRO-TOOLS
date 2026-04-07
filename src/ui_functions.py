@@ -8,6 +8,7 @@ from .gfx import GFX
 from .other import Other
 from .ui import Ui_MainWindow
 from .core import SystemOptimizer, GameWatcher, MonitorStats, AIDynamicOptimizer, ExpertMode, CompatibilityManager
+from .auto_updater import AutoUpdateManager
 from .system import SystemTweaks
 
 
@@ -26,6 +27,9 @@ class Window(QtWidgets.QMainWindow, Game):
         self.ai = AIDynamicOptimizer(self.optimizer)
         self.expert_mode = ExpertMode()
         self.compatibility_manager = CompatibilityManager()
+        
+        # Auto-update system
+        self.auto_update_manager = AutoUpdateManager(self, app_version, "https://api.github.com/repos/Nitrodz00/NITRO-TOOLS/releases")
         
         # Thread Connections
         self.watcher.game_detected.connect(self._on_game_detected)
@@ -89,19 +93,19 @@ class Window(QtWidgets.QMainWindow, Game):
             self.update_check_btn.setGeometry(QtCore.QRect(400, 600, 300, 50))
             self.update_check_btn.clicked.connect(self._manual_update_check)
             self.update_check_btn.show()
+        
+        # Start automatic update check after UI is ready
+        QtCore.QTimer.singleShot(5000, self._auto_update_check)  # Check after 5 seconds
 
-    def _manual_update_check(self):
+    def _auto_update_check(self):
+        """Automatic update check on startup."""
         self.show_status_message("Checking for updates...")
-        # We reuse the logic from main.py by importing it or triggering a signal
-        # For simplicity, we can just instantiate the CheckUpdateThread here
-        from .update import CheckUpdateThread
-        # Note: GITHUB_REPO_API would need to be accessible
-        repo = "https://api.github.com/repos/Nitrodz00/NITRO-TOOLS/releases/latest"
-        self._manual_checker = CheckUpdateThread(self.app_version, repo)
-        self._manual_checker.update_available.connect(self._on_manual_update_avail)
-        self._manual_checker.no_update.connect(lambda: self.show_status_message("You are using the latest version!"))
-        self._manual_checker.check_failed.connect(lambda: self.show_status_message("Update check failed. Check internet."))
-        self._manual_checker.start()
+        self.auto_update_manager.check_for_updates()
+    
+    def _manual_update_check(self):
+        """Manual update check triggered by user."""
+        self.show_status_message("Checking for updates...")
+        self.auto_update_manager.check_for_updates()
 
     def _on_manual_update_avail(self, ver, url, name, expected_bytes, size, expected_sha, changelog):
         from .update import UpdateWindow
