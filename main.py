@@ -25,7 +25,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v3.0.2"
+APP_VERSION = "v3.1.0"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -216,12 +216,36 @@ def run_application():
         _main_window = Window(APP_NAME, APP_VERSION)
         _main_window.show()
         return _main_window
+    except ImportError as e:
+        # Handle missing dependencies gracefully
+        msg = f"MISSING DEPENDENCY:\n\n{str(e)}\n\nPlease install required packages:\n1. Run as Administrator\n2. Install dependencies with: pip install -r requirements.txt\n3. Restart the application"
+        ctypes.windll.user32.MessageBoxW(0, msg, "NITROTOOLS - Missing Dependencies", 0x30)
+        sys.exit(1)
     except Exception as e:
         import traceback
         error_info = traceback.format_exc()
-        msg = f"CRITICAL STARTUP ERROR:\n\n{str(e)}\n\n{error_info}"
-        # Native Windows MessageBoxW (Type 0x10 is MB_ICONERROR)
-        ctypes.windll.user32.MessageBoxW(0, msg, "NITROTOOLS ENGINE ERROR", 0x10)
+        
+        # Check for common errors and provide helpful messages
+        error_str = str(e).lower()
+        if "access" in error_str or "permission" in error_str:
+            msg = f"PERMISSION ERROR:\n\n{str(e)}\n\nSolution:\n1. Right-click NITROTOOLS and 'Run as Administrator'\n2. Check if antivirus is blocking the application\n3. Ensure Windows has proper permissions"
+        elif "dll" in error_str or "module" in error_str:
+            msg = f"SYSTEM ERROR:\n\n{str(e)}\n\nSolution:\n1. Install Visual C++ Redistributable\n2. Update Windows to latest version\n3. Reinstall the application"
+        elif "memory" in error_str or "ram" in error_str:
+            msg = f"MEMORY ERROR:\n\n{str(e)}\n\nSolution:\n1. Close other applications\n2. Ensure at least 4GB RAM available\n3. Restart your computer"
+        else:
+            msg = f"APPLICATION ERROR:\n\n{str(e)}\n\nTechnical details saved to error.log\n\nPlease:\n1. Run as Administrator\n2. Check system requirements\n3. Contact support if issue persists"
+        
+        # Log the error for debugging
+        try:
+            import logging
+            logging.basicConfig(filename='error.log', level=logging.ERROR)
+            logging.error(f"Startup Error: {error_info}")
+        except:
+            pass
+        
+        # Show user-friendly error message
+        ctypes.windll.user32.MessageBoxW(0, msg, "NITROTOOLS - Startup Error", 0x30)
         sys.exit(1)
 
 

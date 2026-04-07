@@ -7,7 +7,7 @@ from .app_functions import Game
 from .gfx import GFX
 from .other import Other
 from .ui import Ui_MainWindow
-from .core import SystemOptimizer, GameWatcher, MonitorStats, AIDynamicOptimizer
+from .core import SystemOptimizer, GameWatcher, MonitorStats, AIDynamicOptimizer, ExpertMode, CompatibilityManager
 from .system import SystemTweaks
 
 
@@ -24,6 +24,8 @@ class Window(QtWidgets.QMainWindow, Game):
         self.watcher = GameWatcher(self)
         self.monitor = MonitorStats()
         self.ai = AIDynamicOptimizer(self.optimizer)
+        self.expert_mode = ExpertMode()
+        self.compatibility_manager = CompatibilityManager()
         
         # Thread Connections
         self.watcher.game_detected.connect(self._on_game_detected)

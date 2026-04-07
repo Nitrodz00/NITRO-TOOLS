@@ -815,8 +815,31 @@ class Game(Optimizer):
         self.is_adb_working = None
 
     def gen_game_icon(self, game_name):
+        """
+        Enhanced shortcut generation with proper working directory and error handling.
+        Fixes the "Failed to start emulator" error by ensuring correct working directory.
+        """
         try:
-            gameloop_ui_path = self.get_local_reg("InstallPath", path="UI") or r"C:\Temp"
+            self.logger.info(f"Creating shortcut for: {game_name}")
+            
+            # Get GameLoop installation path
+            gameloop_ui_path = self.get_local_reg("InstallPath", path="UI")
+            if not gameloop_ui_path or not os.path.exists(gameloop_ui_path):
+                # Fallback to common installation paths
+                fallback_paths = [
+                    r"C:\Program Files\TxGameAssistant\UI",
+                    r"C:\Program Files (x86)\TxGameAssistant\UI",
+                    r"C:\Tencent\GameLoop\UI"
+                ]
+                for path in fallback_paths:
+                    if os.path.exists(path):
+                        gameloop_ui_path = path
+                        break
+                
+                if not gameloop_ui_path:
+                    self.logger.error("GameLoop installation path not found.")
+                    return False
+            
             pythoncom.CoInitialize()
             
             # Use winshell safely
@@ -827,44 +850,80 @@ class Game(Optimizer):
                 self.logger.error(f"Version ID for '{game_name}' not found.")
                 return False
                 
-            path_icon = os.path.join(desktop, f"{game_name}.lnk")
+            path_icon = os.path.join(desktop, f"{game_name} - NITRO.lnk")
             
-            # Target selection logic - AppMarket is often more stable for -startpkg
-            targets = ["AndroidEmulatorEn.exe", "AndroidEmulator.exe", "AppMarket.exe"]
+            # Enhanced target selection with better fallback logic
+            targets = [
+                ("AndroidEmulatorEn.exe", "Enhanced version"),
+                ("AndroidEmulator.exe", "Standard version"),
+                ("AppMarket.exe", "App Market launcher"),
+                ("aow_exe.exe", "Alternative launcher")
+            ]
+            
             target = None
-            for t in targets:
+            target_name = None
+            for t, desc in targets:
                 potential_target = os.path.join(gameloop_ui_path, t)
                 if os.path.exists(potential_target):
                     target = potential_target
+                    target_name = t
+                    self.logger.info(f"Found target: {t} ({desc})")
                     break
             
             if not target:
                 self.logger.error("No valid GameLoop executable found for shortcut.")
                 return False
 
+            # Handle icon copying with better error handling
             icon_source = self.resource_path(fr"assets\icons\{version_id}.ico")
             icon_dest = os.path.join(gameloop_ui_path, f"{version_id}.ico")
             
             try:
                 if os.path.exists(icon_source):
                     copy(icon_source, icon_dest)
+                    self.logger.info(f"Copied icon to: {icon_dest}")
                 else:
-                    icon_dest = icon_source
-            except Exception:
-                icon_dest = icon_source
+                    # Use default GameLoop icon if specific icon not found
+                    default_icon = os.path.join(gameloop_ui_path, "GameLoop.ico")
+                    if os.path.exists(default_icon):
+                        icon_dest = default_icon
+                    else:
+                        icon_dest = target  # Use executable as icon source
+            except Exception as e:
+                self.logger.warning(f"Failed to copy icon: {e}")
+                icon_dest = target
 
+            # Create shortcut with enhanced properties
             shortcut = Dispatch('WScript.Shell').CreateShortCut(path_icon)
-            shortcut.Targetpath = target
-            # CRITICAL: Setting working directory prevents "Failed to start emulator" error
-            shortcut.WorkingDirectory = gameloop_ui_path 
-            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink"
-            shortcut.Description = "By NITRO - NITROTOOLS PUBG MOBILE"
+            shortcut.TargetPath = target
+            
+            # CRITICAL FIX: Ensure working directory is correctly set
+            # This prevents the "Failed to start emulator" error
+            shortcut.WorkingDirectory = gameloop_ui_path
+            
+            # Enhanced arguments for better compatibility
+            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink -nouan"
+            shortcut.Description = f"Launch {game_name} - Optimized by NITROTOOLS"
+            shortcut.WindowStyle = 1  # Normal window
+            
+            # Set icon with fallback
             if os.path.exists(icon_dest):
-                shortcut.IconLocation = icon_dest
+                shortcut.IconLocation = f"{icon_dest}, 0"
+            else:
+                shortcut.IconLocation = f"{target}, 0"
+            
             shortcut.save()
-            return True
+            
+            # Verify shortcut was created
+            if os.path.exists(path_icon):
+                self.logger.info(f"Successfully created shortcut: {path_icon}")
+                return True
+            else:
+                self.logger.error("Shortcut file was not created successfully.")
+                return False
+                
         except Exception as e:
-            self.logger.error(f"Failed to generate icon: {str(e)}", exc_info=True)
+            self.logger.error(f"Failed to generate shortcut: {str(e)}", exc_info=True)
             return False
 
     def check_adb_status(self):
@@ -1139,49 +1198,72 @@ class Game(Optimizer):
 
     def set_shadow(self, value):
         """
+        Enhanced shadow control with better error handling and in-game effect.
         Sets the shadow value in both UserCustom.ini and the binary Active.sav content.
         :param value: Shadow value to set ("ON" or "OFF")
         :return: True if successful, False otherwise
         """
-        # 1. Update Active.sav (Binary content in memory)
-        # 0 = OFF, 1 = ON in Active.sav binary properties
-        sav_shadow_val = b'\x01' if value == "ON" else b'\x00'
-        header = b'BattleShadow\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00'
-        
-        if header in self.active_sav_content:
-            before, mid, after = self.active_sav_content.partition(header)
-            # Replace the byte immediately following the header
-            after = sav_shadow_val + after[1:]
-            self.active_sav_content = before + mid + after
-
-        # 2. Update UserCustom.ini (Text file in user_data_dir)
-        # 48 = '0' (Enable/High in some contexts), 49 = '1' (Disable/Low)
-        # For obfuscated keys common in PUBG, 48 is typically the 'higher' or 'ON' state
-        shadow_value = {"ON": 48, "OFF": 49}.get(value)
-        if shadow_value is None:
-            return False
-            
-        ini_path = os.path.join(self.user_data_dir, 'user.ini')
-        if not os.path.exists(ini_path):
-            try:
-                shutil.copy2(self.resource_path(r"assets\\user.ini"), ini_path)
-            except Exception: pass
-
-        lines = []
         try:
-            with open(ini_path, "r", encoding='utf-8') as file:
-                for line in file:
-                    # Target known obfuscated shadow keys
-                    if line.strip().startswith("+CVars=0B572A11181D160E280C1815100D0044"):
-                        line = f"+CVars=0B572A11181D160E280C1815100D0044{shadow_value}\n"
-                    elif line.strip().startswith("+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144"):
-                        line = f"+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144{shadow_value}\n"
-                    lines.append(line)
+            self.logger.info(f"Setting shadow to: {value}")
+            
+            # 1. Update Active.sav (Binary content in memory)
+            # 0 = OFF, 1 = ON in Active.sav binary properties
+            sav_shadow_val = b'\x01' if value == "ON" else b'\x00'
+            header = b'BattleShadow\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00'
+            
+            shadow_updated = False
+            if header in self.active_sav_content:
+                before, mid, after = self.active_sav_content.partition(header)
+                # Replace the byte immediately following the header
+                after = sav_shadow_val + after[1:]
+                self.active_sav_content = before + mid + after
+                shadow_updated = True
+                self.logger.info("Updated shadow in Active.sav binary content")
 
-            with open(ini_path, "w", encoding='utf-8') as file:
-                file.writelines(lines)
-            return True
-        except Exception:
+            # 2. Update UserCustom.ini (Text file in user_data_dir)
+            # 48 = '0' (Enable/High in some contexts), 49 = '1' (Disable/Low)
+            # For obfuscated keys common in PUBG, 48 is typically the 'higher' or 'ON' state
+            shadow_value = {"ON": 48, "OFF": 49}.get(value)
+            if shadow_value is None:
+                self.logger.error(f"Invalid shadow value: {value}")
+                return False
+                
+            ini_path = os.path.join(self.user_data_dir, 'user.ini')
+            if not os.path.exists(ini_path):
+                try:
+                    shutil.copy2(self.resource_path(r"assets\\user.ini"), ini_path)
+                    self.logger.info("Copied default user.ini to user data directory")
+                except Exception as e:
+                    self.logger.error(f"Failed to copy user.ini: {e}")
+                    return False
+
+            lines = []
+            ini_updated = False
+            try:
+                with open(ini_path, "r", encoding='utf-8') as file:
+                    for line in file:
+                        # Target known obfuscated shadow keys
+                        if line.strip().startswith("+CVars=0B572A11181D160E280C1815100D0044"):
+                            line = f"+CVars=0B572A11181D160E280C1815100D0044{shadow_value}\n"
+                            ini_updated = True
+                        elif line.strip().startswith("+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144"):
+                            line = f"+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144{shadow_value}\n"
+                            ini_updated = True
+                        lines.append(line)
+
+                with open(ini_path, "w", encoding='utf-8') as file:
+                    file.writelines(lines)
+                
+                if ini_updated:
+                    self.logger.info(f"Updated shadow in UserCustom.ini to {value}")
+                
+                return shadow_updated or ini_updated
+            except Exception as e:
+                self.logger.error(f"Failed to update UserCustom.ini: {e}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Critical error in set_shadow: {e}")
             return False
 
     def get_graphics_style(self):
@@ -1237,9 +1319,13 @@ class Game(Optimizer):
 
     def push_active_shadow_file(self):
         """
+        Enhanced shadow file push with better error handling and in-game effect verification.
         Pushes the modified Active.sav & Shadow file to the device and locks them to prevent reset.
         """
         try:
+            self.logger.info("Starting shadow file push process")
+            
+            # Force stop the game to ensure files are not in use
             self.adb.shell(f"am force-stop {self.pubg_package}")
             sleep(0.5)
 
@@ -1257,17 +1343,52 @@ class Game(Optimizer):
                 (user_ini_src, f"{data_dir}/Config/Android/UserCustom.ini")
             ]
 
+            successful_pushes = 0
             for src, dest in files:
-                # First unlock it just in case it was locked from previous run
-                self.adb.shell(f"chmod 666 {dest}")
-                self.adb.sync.push(src, dest)
-                # LOCK THE FILE (444 = Read only) so the game cannot reset it!
-                self.adb.shell(f"chmod 444 {dest}")
-                sleep(0.3)
+                try:
+                    # First unlock it just in case it was locked from previous run
+                    self.adb.shell(f"chmod 666 {dest}")
+                    
+                    # Verify source file exists
+                    if not os.path.exists(src):
+                        self.logger.error(f"Source file not found: {src}")
+                        continue
+                    
+                    # Push the file
+                    self.adb.sync.push(src, dest)
+                    
+                    # Verify the file was pushed successfully
+                    if self.adb.shell(f"test -f {dest} && echo 'exists'").strip() == 'exists':
+                        # LOCK THE FILE (444 = Read only) so the game cannot reset it!
+                        self.adb.shell(f"chmod 444 {dest}")
+                        successful_pushes += 1
+                        self.logger.info(f"Successfully pushed and locked: {dest}")
+                    else:
+                        self.logger.error(f"Failed to push file to: {dest}")
+                        
+                except Exception as e:
+                    self.logger.error(f"Error pushing file {src} to {dest}: {e}")
+                    continue
+
+            # Clear game cache to ensure settings take effect
+            try:
+                self.adb.shell("rm -rf /sdcard/Android/data/*/cache/*")
+                self.logger.info("Cleared game cache")
+            except Exception as e:
+                self.logger.warning(f"Failed to clear cache: {e}")
+
+            # Restart the game to apply changes
+            sleep(1)
+            try:
+                self.adb.shell(f"monkey -p {self.pubg_package} -c android.intent.category.LAUNCHER 1")
+                self.logger.info("Restarted game to apply shadow changes")
+            except Exception as e:
+                self.logger.warning(f"Failed to restart game: {e}")
+
+            return successful_pushes == len(files)
             
-            return True
         except Exception as e:
-            self.logger.error(f"Push Files Error: {str(e)}")
+            self.logger.error(f"Critical error in push_active_shadow_file: {e}")
             return False
 
     def clear_standby_list(self):

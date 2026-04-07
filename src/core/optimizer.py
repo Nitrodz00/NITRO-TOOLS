@@ -15,38 +15,106 @@ class SystemOptimizer:
         self.REG_UI = r'SOFTWARE\WOW6432Node\Tencent\MobileGamePC\UI'
         
     def get_hardware_info(self) -> Dict[str, Any]:
-        """Detect system hardware to recommend settings gracefully."""
+        """Enhanced hardware detection with full AMD GPU support."""
         stats = {
             "cpu_cores": psutil.cpu_count(logical=False) or 4,
             "cpu_threads": psutil.cpu_count(logical=True) or 8,
             "ram_total_gb": round(psutil.virtual_memory().total / (1024**3)),
             "gpu_name": "Generic GPU",
-            "vram_mb": 2048
+            "vram_mb": 2048,
+            "gpu_vendor": "Unknown",
+            "gpu_driver_version": "Unknown"
         }
         
         CREATE_NO_WINDOW = 0x08000000
+        
+        # Try NVIDIA Detection first
         try:
-            # Try NVIDIA Detection
-            cmd = ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"]
+            cmd = ["nvidia-smi", "--query-gpu=name,memory.total,driver_version", "--format=csv,noheader,nounits"]
             res = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
             out = res.stdout.strip()
             if out and ',' in out:
                 parts = out.split(',')
-                if len(parts) >= 2:
+                if len(parts) >= 3:
                     stats["gpu_name"] = parts[0].strip()
-                    try: stats["vram_mb"] = float(parts[1].strip())
+                    stats["gpu_vendor"] = "NVIDIA"
+                    try: 
+                        stats["vram_mb"] = float(parts[1].strip())
+                        stats["gpu_driver_version"] = parts[2].strip()
                     except: pass
         except Exception:
+            pass
+        
+        # If NVIDIA not detected, try AMD detection
+        if stats["gpu_vendor"] == "Unknown":
             try:
-                # Try WMIC Generic Detection as fallback
-                cmd = ["wmic", "path", "win32_videocontroller", "get", "name", "/format:list"]
+                # AMD GPU detection using AMD-specific tools
+                # Try Radeon Software command line interface
+                cmd = ["radeon-cmd", "--info"]
                 res = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
-                out = res.stdout.strip()
-                if "Name=" in out:
-                    stats["gpu_name"] = out.split("Name=")[1].split("\n")[0].strip()
+                if res.returncode == 0:
+                    # Parse AMD GPU info
+                    lines = res.stdout.split('\n')
+                    for line in lines:
+                        if "GPU" in line and "Radeon" in line:
+                            stats["gpu_name"] = line.strip()
+                            stats["gpu_vendor"] = "AMD"
+                            break
             except Exception:
                 pass
-            
+        
+        # Fallback to WMIC for any GPU
+        if stats["gpu_vendor"] == "Unknown":
+            try:
+                cmd = ["wmic", "path", "win32_videocontroller", "get", "name,adapterram", "/format:list"]
+                res = subprocess.run(cmd, capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+                out = res.stdout.strip()
+                
+                gpu_name = ""
+                adapter_ram = ""
+                
+                for line in out.split('\n'):
+                    if line.startswith("Name="):
+                        gpu_name = line.split("Name=")[1].strip()
+                    elif line.startswith("AdapterRAM="):
+                        try:
+                            ram_bytes = int(line.split("AdapterRAM=")[1].strip())
+                            adapter_ram = ram_bytes // (1024 * 1024)  # Convert to MB
+                        except:
+                            pass
+                
+                if gpu_name:
+                    stats["gpu_name"] = gpu_name
+                    if adapter_ram:
+                        stats["vram_mb"] = adapter_ram
+                    
+                    # Detect vendor from name
+                    gpu_name_lower = gpu_name.lower()
+                    if "nvidia" in gpu_name_lower or "geforce" in gpu_name_lower or "quadro" in gpu_name_lower or "tesla" in gpu_name_lower:
+                        stats["gpu_vendor"] = "NVIDIA"
+                    elif "amd" in gpu_name_lower or "radeon" in gpu_name_lower or "ati" in gpu_name_lower:
+                        stats["gpu_vendor"] = "AMD"
+                    elif "intel" in gpu_name_lower:
+                        stats["gpu_vendor"] = "Intel"
+                    else:
+                        stats["gpu_vendor"] = "Unknown"
+                        
+            except Exception:
+                pass
+        
+        # Get additional GPU info for AMD using WMI
+        if stats["gpu_vendor"] == "AMD":
+            try:
+                import wmi
+                c = wmi.WMI()
+                for gpu in c.Win32_VideoController():
+                    if "AMD" in gpu.Name or "Radeon" in gpu.Name or "ATI" in gpu.Name:
+                        if gpu.DriverVersion:
+                            stats["gpu_driver_version"] = gpu.DriverVersion
+                        break
+            except Exception:
+                pass
+        
         return stats
 
     def set_registry_dword(self, path: str, name: str, value: int, root=winreg.HKEY_CURRENT_USER):

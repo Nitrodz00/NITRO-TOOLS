@@ -1,0 +1,28 @@
+﻿# NITROTOOLS PUBG MOBILE v3.1.0 Installation Guide
+
+## Quick Start
+1. Run NITROTOOLS_PUBG_MOBILE_v3.1.0.exe as Administrator
+2. The application will automatically detect your system
+3. Enable Expert Mode for advanced settings
+4. Use Compatibility Manager to check system requirements
+
+## New Features
+- 🎛️ Expert Mode with 5 optimization categories
+- 🛡️ Compatibility Manager for automatic feature detection
+- 🚀 Full AMD GPU support
+- 📊 Enhanced performance monitoring with caching
+- ⚡ QTimer-based responsive interface
+
+## System Requirements
+- Windows 10/11 (Build 10240+)
+- 4GB RAM minimum (6GB+ recommended)
+- Administrator privileges required
+- GameLoop 7.1 or later
+
+## Troubleshooting
+- Run as Administrator if features don't work
+- Check Compatibility Manager for disabled features
+- Update GPU drivers for best performance
+- Disable antivirus temporarily if installation fails
+
+For detailed information, see CHANGELOG_v3.1.0.md
