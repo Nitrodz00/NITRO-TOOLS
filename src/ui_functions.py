@@ -101,9 +101,9 @@ class Window(QtWidgets.QMainWindow, Game):
         self._manual_checker.check_failed.connect(lambda: self.show_status_message("Update check failed. Check internet."))
         self._manual_checker.start()
 
-    def _on_manual_update_avail(self, ver, url, name, size, changelog):
+    def _on_manual_update_avail(self, ver, url, name, expected_bytes, size, expected_sha, changelog):
         from .update import UpdateWindow
-        self._manual_upd_win = UpdateWindow(ver, url, name, size, changelog)
+        self._manual_upd_win = UpdateWindow(ver, url, name, expected_bytes, size, expected_sha, changelog)
         self._manual_upd_win.show()
 
     def _init_system_tray(self):

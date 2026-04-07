@@ -25,7 +25,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v3.0.0"
+APP_VERSION = "v3.0.1"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -202,9 +202,9 @@ _update_checker = None
 _single_instance_lock = None
 
 
-def on_update_available(latest_version, download_url, asset_name, size, changelog):
+def on_update_available(latest_version, download_url, asset_name, expected_bytes, size, expected_sha, changelog):
     global _update_window
-    _update_window = UpdateWindow(latest_version, download_url, asset_name, size, changelog)
+    _update_window = UpdateWindow(latest_version, download_url, asset_name, expected_bytes, size, expected_sha, changelog)
     _update_window.window_closed.connect(run_application)
     _update_window.show()
 

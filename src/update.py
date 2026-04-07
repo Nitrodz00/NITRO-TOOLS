@@ -4,6 +4,7 @@ import re
 import zipfile
 import tempfile
 import subprocess
+import hashlib
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, QTimer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QVBoxLayout,
@@ -11,6 +12,14 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QVBoxLayout,
                               QTextEdit)
 from . import resource_path
 import requests
+
+
+def compute_sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 class DownloadThread(QThread):
@@ -92,7 +101,8 @@ class CheckUpdateThread(QThread):
     - no_update: already on latest
     - check_failed: no internet / API error → app opens normally
     """
-    update_available = pyqtSignal(str, str, str, str, str)  # ver, url, name, size, changelog
+    # Emits: ver, download_url, asset_name, expected_bytes (int), size_display (str), expected_sha (hex or ''), changelog
+    update_available = pyqtSignal(str, str, str, int, str, str, str)
     no_update = pyqtSignal()
     check_failed = pyqtSignal()
 
@@ -126,13 +136,33 @@ class CheckUpdateThread(QThread):
                 if asset is None:
                     asset = assets[0]
 
-                size_mb = round(asset.get("size", 0) / (1024 * 1024), 2)
+                expected_bytes = int(asset.get("size", 0) or 0)
+                size_mb = round(expected_bytes / (1024 * 1024), 2)
                 changelog = _clean_changelog(raw_changelog)
+
+                # Try to find a checksum asset (asset_name + '.sha256' or any .sha256 file)
+                expected_sha = ""
+                checksum_asset = next((a for a in assets if str(a.get('name','')).lower().endswith('.sha256')
+                                        or str(a.get('name','')).lower() == str(asset.get('name','')).lower() + '.sha256'), None)
+                if checksum_asset:
+                    try:
+                        ch_url = checksum_asset.get('browser_download_url')
+                        r = requests.get(ch_url, timeout=6)
+                        if r.status_code == 200:
+                            txt = r.text.strip()
+                            m = re.search(r'([A-Fa-f0-9]{64})', txt)
+                            if m:
+                                expected_sha = m.group(1).lower()
+                    except Exception:
+                        expected_sha = ""
+
                 self.update_available.emit(
                     latest_ver,
                     asset.get("browser_download_url", ""),
                     asset.get("name", ""),
+                    expected_bytes,
                     f"{size_mb} MB",
+                    expected_sha,
                     changelog
                 )
             else:
@@ -146,12 +176,14 @@ class UpdateWindow(QMainWindow):
 
     window_closed = pyqtSignal()
 
-    def __init__(self, latest_version, download_url, asset_name, size, changelog):
+    def __init__(self, latest_version, download_url, asset_name, expected_bytes, size, expected_sha, changelog):
         super().__init__()
         self.latest_version = latest_version
         self.download_url = download_url
         self.asset_name = asset_name
+        self.expected_bytes = int(expected_bytes or 0)
         self.size = size
+        self.expected_sha = (expected_sha or "").lower()
         self.changelog = changelog
         self.download_thread = None
         self._downloaded_path = None
@@ -270,11 +302,35 @@ class UpdateWindow(QMainWindow):
         # File integrity check
         try:
             downloaded_size = os.path.getsize(path)
-            expected_size_mb = float(self.size.split()[0])
-            expected_size = expected_size_mb * 1024 * 1024
-            if abs(downloaded_size - expected_size) > 1024:  # Allow 1KB tolerance
-                self._on_failed(f"File integrity check failed. Expected {expected_size_mb}MB, got {downloaded_size / (1024*1024):.2f}MB.")
-                return
+
+            # Prefer exact byte comparison when provided by the API
+            if isinstance(self.expected_bytes, int) and self.expected_bytes > 0:
+                expected_size = int(self.expected_bytes)
+                if downloaded_size != expected_size:
+                    self._on_failed(f"File integrity check failed. Expected {expected_size} bytes, got {downloaded_size} bytes.")
+                    return
+            else:
+                # Fallback: parse human-readable size string (legacy)
+                try:
+                    expected_size_mb = float(self.size.split()[0])
+                    expected_size = int(expected_size_mb * 1024 * 1024)
+                    if abs(downloaded_size - expected_size) > 1024:  # Allow 1KB tolerance
+                        self._on_failed(f"File integrity check failed. Expected {expected_size_mb}MB, got {downloaded_size / (1024*1024):.2f}MB.")
+                        return
+                except Exception:
+                    # If parsing fails, continue (we'll rely on checksum if present)
+                    pass
+
+            # If a checksum was provided, verify it
+            if self.expected_sha:
+                try:
+                    computed = compute_sha256(path)
+                    if computed.lower() != self.expected_sha.lower():
+                        self._on_failed("File checksum mismatch (SHA256). Download may be corrupted.")
+                        return
+                except Exception as e:
+                    self._on_failed(f"Checksum verify error: {e}")
+                    return
         except Exception as e:
             self._on_failed(f"Integrity check error: {e}")
             return

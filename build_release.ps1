@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-$ReleaseVersion = "3.0.0"
+$ReleaseVersion = "3.0.1"
 $ExeName = "NITROTOOLS_PUBG_MOBILE.exe"
 
 Write-Host "Installing build deps (PyInstaller)..." -ForegroundColor Cyan
