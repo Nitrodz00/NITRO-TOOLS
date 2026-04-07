@@ -2,7 +2,7 @@ import random
 import subprocess
 import psutil
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
-from typing import Dict, Any
+
 from .cache_manager import get_cache_manager, PerformanceCache
 
 class MonitorStats(QThread):
@@ -71,7 +71,7 @@ class MonitorStats(QThread):
         except:
             pass
 
-    def _get_gpu_stats(self) -> Dict[str, Any]:
+    def _get_gpu_stats(self) -> dict:
         """Get GPU statistics based on detected vendor."""
         stats = {"gpu_percent": 0.0, "gpu_temp": 0, "gpu_memory_used": 0, "gpu_memory_total": 0}
         
@@ -303,7 +303,7 @@ class MonitorStats(QThread):
             pass
         return 0
     
-    def _generate_alerts(self, stats: Dict[str, Any]) -> List[str]:
+    def _generate_alerts(self, stats: dict) -> list:
         """Generate performance alerts based on stats."""
         alerts = []
         if stats["gpu_temp"] > 85:

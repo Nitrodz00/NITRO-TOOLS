@@ -39,3 +39,6 @@ change_icon.py
 modify_ui.py
 strip_mk.py
 test_gui.py
+*.zip
+release_v3.1.0/
+temp_patch/
