@@ -21,7 +21,7 @@ class Window(QtWidgets.QMainWindow, Game):
         
         # Core Modules
         self.optimizer = SystemOptimizer()
-        self.watcher = GameWatcher()
+        self.watcher = GameWatcher(self)
         self.monitor = MonitorStats()
         self.ai = AIDynamicOptimizer(self.optimizer)
         
@@ -44,6 +44,8 @@ class Window(QtWidgets.QMainWindow, Game):
         self.ui.setupUi(self)
         self.ui.appname_label.setText(f"{app_name} {app_version}")
         self.timer = None
+        # Auto-boost flag default (can be toggled by user)
+        self.auto_boost_enabled = False
         
         # Apply programmatic layout fixes to prevent overlaps
         self._fix_ui_layouts()
@@ -249,6 +251,14 @@ class Window(QtWidgets.QMainWindow, Game):
                 self.ui.hotkeys_btn.setCheckable(True)
                 self.ui.hotkeys_btn.setStyleSheet(HOTKEYS_STYLE)
                 grid_layout.addWidget(self.ui.hotkeys_btn, 1, 0, 1, 2)
+
+                # Auto-Boost toggle: keep light optimizations while game runs
+                self.ui.auto_boost_btn = QtWidgets.QPushButton("🛡️ AUTO-BOOST WHILE GAME RUNS")
+                self.ui.auto_boost_btn.setMinimumHeight(btn_h)
+                self.ui.auto_boost_btn.setCheckable(True)
+                self.ui.auto_boost_btn.setStyleSheet(HOTKEYS_STYLE)
+                self.ui.auto_boost_btn.setChecked(False)
+                grid_layout.addWidget(self.ui.auto_boost_btn, 6, 0, 1, 2)
                 
                 # High Priority Button
                 self.ui.high_priority_btn = QtWidgets.QPushButton("🚀 HIGH PRIORITY")

@@ -33,6 +33,31 @@ class Settings:
             "com.pubg.krmobile": "PUBG Mobile KR",
             "com.pubg.imobile": "Battlegrounds Mobile India"}
         self.logger = setup_logger('error_logger', 'error.log')
+        # Setup writable user data directory for runtime files (avoid writing into package assets)
+        try:
+            local_appdata = os.getenv('LOCALAPPDATA') or tempfile.gettempdir()
+        except Exception:
+            local_appdata = tempfile.gettempdir()
+        self.user_data_dir = os.path.join(local_appdata, 'NitroTools')
+        try:
+            os.makedirs(self.user_data_dir, exist_ok=True)
+        except Exception:
+            pass
+
+        # Copy default resource files to user data dir if missing
+        def _copy_default(rel_path, dest_name):
+            try:
+                src = self.resource_path(rel_path)
+                dst = os.path.join(self.user_data_dir, dest_name)
+                if not os.path.exists(dst) and os.path.exists(src):
+                    shutil.copy2(src, dst)
+            except Exception:
+                pass
+
+        _copy_default(r'assets\\user.ini', 'user.ini')
+        _copy_default('assets/old.sav', 'old.sav')
+        _copy_default('assets/new.sav', 'new.sav')
+        _copy_default(r'assets\\testADB.prop', 'testADB.prop')
         
         # Add Gameloop UI path to ENV PATH so adbutils can find adb.exe
         try:
@@ -943,7 +968,7 @@ class Game(Optimizer):
 
     def get_graphics_file(self, package: str):
         active_savegames_path = f"/sdcard/Android/data/{package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/SaveGames/Active.sav"
-        local_file_path = self.resource_path('assets/old.sav')
+        local_file_path = os.path.join(self.user_data_dir, 'old.sav')
         self.pubg_package = package
         self.adb.sync.pull(active_savegames_path, local_file_path)
 
@@ -951,9 +976,18 @@ class Game(Optimizer):
             self.active_sav_content = file.read()
 
     def save_graphics_file(self):
-        file_path = self.resource_path("assets/new.sav")
-        with open(file_path, 'wb') as file:
-            file.write(self.active_sav_content)
+        file_path = os.path.join(self.user_data_dir, 'new.sav')
+        try:
+            with open(file_path, 'wb') as file:
+                file.write(self.active_sav_content)
+        except Exception:
+            # Fallback to write into temp dir if user_data_dir not writable
+            try:
+                tmp = os.path.join(tempfile.gettempdir(), 'new.sav')
+                with open(tmp, 'wb') as file:
+                    file.write(self.active_sav_content)
+            except Exception:
+                pass
 
     def set_fps(self, val: str) -> None:
         """
@@ -1033,17 +1067,59 @@ class Game(Optimizer):
         """
         shadow_name = None
         user_custom_ini_path = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/UserCustom.ini"
-        self.adb.sync.pull(user_custom_ini_path, self.resource_path(r'assets\user.ini'))
+        local_ini = os.path.join(self.user_data_dir, 'user.ini')
 
-        with open(self.resource_path(r"assets\user.ini")) as file:
-            for line in file:
-                line = line.strip()
-                if line.startswith("+CVars=0B572A11181D160E280C1815100D0044"):
-                    if int(line[-2:]) == 49:
-                        shadow_name = "Disable"
-                    elif int(line[-2:]) == 48:
-                        shadow_name = "Enable"
-                    break
+        # Try to pull the remote ini into a writable user_data_dir location
+        try:
+            self.adb.sync.pull(user_custom_ini_path, local_ini)
+        except Exception:
+            # If pull fails, fall back to existing local copy or packaged asset
+            if not os.path.exists(local_ini):
+                try:
+                    shutil.copy2(self.resource_path(r"assets\\user.ini"), local_ini)
+                except Exception:
+                    pass
+
+        # Parse the local ini for the shadow flag in a robust way
+        try:
+            with open(local_ini, 'r', encoding='utf-8') as file:
+                for line in file:
+                    line = line.strip()
+                    if not line.startswith('+CVars='):
+                        continue
+                    # Last two characters are usually the numeric flag (48/49)
+                    tail = line[-2:]
+                    try:
+                        val = int(tail)
+                        if val == 49:
+                            shadow_name = 'Disable'
+                            break
+                        elif val == 48:
+                            shadow_name = 'Enable'
+                            break
+                    except Exception:
+                        continue
+        except Exception:
+            # As a final fallback try packaged asset
+            try:
+                with open(self.resource_path(r"assets\\user.ini"), 'r', encoding='utf-8') as file:
+                    for line in file:
+                        line = line.strip()
+                        if not line.startswith('+CVars='):
+                            continue
+                        tail = line[-2:]
+                        try:
+                            val = int(tail)
+                            if val == 49:
+                                shadow_name = 'Disable'
+                                break
+                            elif val == 48:
+                                shadow_name = 'Enable'
+                                break
+                        except Exception:
+                            continue
+            except Exception:
+                pass
 
         return shadow_name
 
@@ -1058,17 +1134,29 @@ class Game(Optimizer):
         shadow_value = {"ON": 48, "OFF": 49}.get(value)
         if shadow_value is None:
             return False
-        lines = []
-        with open(self.resource_path(r"assets\user.ini"), "r") as file:
-            for line in file:
-                if line.strip().startswith("+CVars=0B572A11181D160E280C1815100D0044"):
-                    line = f"+CVars=0B572A11181D160E280C1815100D0044{shadow_value}\n"
-                elif line.strip().startswith("+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144"):
-                    line = f"+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144{shadow_value}\n"
-                lines.append(line)
+        ini_path = os.path.join(self.user_data_dir, 'user.ini')
+        if not os.path.exists(ini_path):
+            # fallback to packaged resource if user copy missing
+            try:
+                shutil.copy2(self.resource_path(r"assets\\user.ini"), ini_path)
+            except Exception:
+                pass
 
-        with open(self.resource_path(r"assets\user.ini"), "w") as file:
-            file.writelines(lines)
+        lines = []
+        try:
+            with open(ini_path, "r", encoding='utf-8') as file:
+                for line in file:
+                    if line.strip().startswith("+CVars=0B572A11181D160E280C1815100D0044"):
+                        line = f"+CVars=0B572A11181D160E280C1815100D0044{shadow_value}\n"
+                    elif line.strip().startswith("+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144"):
+                        line = f"+CVars=0B572C0A1C0B2A11181D160E2A0E100D1A1144{shadow_value}\n"
+                    lines.append(line)
+
+            with open(ini_path, "w", encoding='utf-8') as file:
+                file.writelines(lines)
+            return True
+        except Exception:
+            return False
 
         return True
 
@@ -1133,9 +1221,16 @@ class Game(Optimizer):
 
             data_dir = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved"
 
+            new_sav_src = os.path.join(self.user_data_dir, 'new.sav')
+            user_ini_src = os.path.join(self.user_data_dir, 'user.ini')
+            if not os.path.exists(new_sav_src):
+                new_sav_src = self.resource_path(r"assets\\new.sav")
+            if not os.path.exists(user_ini_src):
+                user_ini_src = self.resource_path(r"assets\\user.ini")
+
             files = [
-                (self.resource_path(r"assets\new.sav"), f"{data_dir}/SaveGames/Active.sav"),
-                (self.resource_path(r"assets\user.ini"), f"{data_dir}/Config/Android/UserCustom.ini")
+                (new_sav_src, f"{data_dir}/SaveGames/Active.sav"),
+                (user_ini_src, f"{data_dir}/Config/Android/UserCustom.ini")
             ]
 
             for src, dest in files:

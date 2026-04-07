@@ -30,6 +30,8 @@ class SystemTweaks(QObject):
             self.ui.ai_optimizer_btn.clicked.connect(self.run_ai_optimizer)
         if hasattr(self.ui, 'hotkeys_btn'):
             self.ui.hotkeys_btn.clicked.connect(self.toggle_hotkeys)
+        if hasattr(self.ui, 'auto_boost_btn'):
+            self.ui.auto_boost_btn.clicked.connect(self.toggle_auto_boost)
 
     def run_ai_optimizer(self):
         import psutil
@@ -69,7 +71,12 @@ class SystemTweaks(QObject):
         self.app.GFX.gfx_submit_button_click()
         self.activate_high_priority()
         self.activate_cpu_affinity()
-        self.app.show_status_message("AI Optimization Complete! GameLoop Set to Optimal.")
+        # Enable persistent auto-boost while the game is running
+        try:
+            self.app.auto_boost_enabled = True
+        except Exception:
+            pass
+        self.app.show_status_message("AI Optimization Complete! Auto-Boost enabled while GameLoop runs.")
 
     def toggle_hotkeys(self):
         try:
@@ -136,6 +143,23 @@ class SystemTweaks(QObject):
             self.app.show_status_message("RAM Standby items cleared. Stuttering reduced!")
         else:
             self.app.show_status_message("RAM focus optimization completed.")
+
+    def toggle_auto_boost(self):
+        """Toggle persistent auto-boost while the GameLoop runs."""
+        self.auto_boost_active = False
+        try:
+            self.auto_boost_active = self.ui.auto_boost_btn.isChecked()
+            self.app.auto_boost_enabled = self.auto_boost_active
+            if self.auto_boost_active:
+                self.ui.auto_boost_btn.setText("🛡️ AUTO-BOOST ACTIVE")
+                self.ui.auto_boost_btn.setStyleSheet("background: #00ff00; color: #000; font-weight: bold;")
+                self.app.show_status_message("Auto-Boost enabled. Will optimize while GameLoop runs.")
+            else:
+                self.ui.auto_boost_btn.setText("🛡️ AUTO-BOOST WHILE GAME RUNS")
+                self.ui.auto_boost_btn.setStyleSheet("")
+                self.app.show_status_message("Auto-Boost disabled.")
+        except Exception:
+            self.app.show_status_message("Failed to toggle Auto-Boost.")
 
     def activate_ping_stabilizer(self):
         # We'll toggle it or just enable it

@@ -13,6 +13,8 @@ class GameWatcher(QThread):
         self.game_running = False
         self.target_processes = ['AndroidEmulatorEn.exe', 'AndroidEmulatorEx.exe', 'AndroidEmulator.exe', 'aow_exe.exe']
         self.telemetry_killers = ['Syzs_dl_svr.exe', 'QMEmulatorService.exe', 'TBSWebRenderer.exe']
+        # Keep reference to main window if provided so watcher can call higher-level tweaks
+        self.window = parent
 
     def run(self):
         """Monitor processes in a loop with low overhead."""
@@ -47,7 +49,7 @@ class GameWatcher(QThread):
                 pass
             
             # Use adaptive polling - check slower when inactive, faster when game is on
-            sleep(4 if not self.game_running else 8) # Slower polling to save CPU
+            sleep(4 if self.game_running else 8) # Faster check when game_running, slower when idle
 
     def _apply_boost(self, proc):
         """Apply High Priority and CPU Affinity."""
@@ -65,6 +67,22 @@ class GameWatcher(QThread):
                     self.process_info.emit(f"Applied CPU Affinity: {gaming_cores} to {proc.info['name']}")
                     
         except (psutil.AccessDenied, psutil.NoSuchProcess):
+            pass
+
+        # If the main window requested persistent auto-boost, call safer high-level tweaks
+        try:
+            if getattr(self, 'window', None) and getattr(self.window, 'auto_boost_enabled', False):
+                try:
+                    # Keep priority/affinity and some light maintenance running while game exists
+                    self.window.set_high_performance_power_plan()
+                except Exception:
+                    pass
+                try:
+                    # Periodic RAM cleanup (best-effort)
+                    self.window.clear_standby_list()
+                except Exception:
+                    pass
+        except Exception:
             pass
 
     def stop(self):

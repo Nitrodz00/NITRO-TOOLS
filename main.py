@@ -1,10 +1,22 @@
 import ctypes
 import sys
+import os
+import tempfile
 
 # PyInstaller onefile: adbutils imports pkg_resources before graph analysis sees it — force bundle
 try:
     import pkg_resources
 except ImportError:
+    pass
+
+# Allow user-data overrides for hot-updates: if a user_data_dir contains a 'src' package
+# insert it at front of sys.path so runtime can import patched modules from there.
+try:
+    local_appdata = os.getenv('LOCALAPPDATA') or tempfile.gettempdir()
+    user_data_dir = os.path.join(local_appdata, 'NitroTools')
+    if os.path.isdir(user_data_dir) and user_data_dir not in sys.path:
+        sys.path.insert(0, user_data_dir)
+except Exception:
     pass
 
 from src.ui_functions import Window, QtWidgets
@@ -13,7 +25,7 @@ from PyQt5 import QtCore, QtGui
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v2.5.4"
+APP_VERSION = "v3.0.0"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 

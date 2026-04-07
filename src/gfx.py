@@ -5,49 +5,66 @@ import json
 
 class SubmitWorkerThread(QThread):
     task_completed = pyqtSignal()
+    status = pyqtSignal(str)
 
-    def __init__(self, window, ui, gfx):
+    def __init__(self, window, ui, gfx, *, selected_graphics=None, selected_fps=None,
+                 selected_style=None, selected_shadow=None, resolution_checked=False):
         super(SubmitWorkerThread, self).__init__()
         self.app = window
         self.ui = ui
         self.gfx = gfx
+        self.selected_graphics = selected_graphics
+        self.selected_fps = selected_fps
+        self.selected_style = selected_style
+        self.selected_shadow = selected_shadow
+        self.resolution_checked = resolution_checked
 
     def run(self):
-        self.app.show_status_message("Working on Graphics Settings...")
+        self.status.emit("Working on Graphics Settings...")
+        try:
+            # Apply selected options (collected on main thread)
+            if self.selected_graphics:
+                self.app.set_graphics_quality(self.selected_graphics)
 
-        checked_graphics_button = next((button for button in self.gfx.graphics_buttons if button.isChecked()), None)
-        if checked_graphics_button:
-            self.app.set_graphics_quality(checked_graphics_button.text())
+            if self.selected_fps:
+                self.app.set_fps(self.selected_fps)
 
-        checked_fps_button = next((button for button in self.gfx.fps_buttons if button.isChecked()), None)
-        if checked_fps_button:
-            self.app.set_fps(checked_fps_button.text())
+            if self.selected_style:
+                self.app.set_graphics_style(self.selected_style)
 
-        checked_style_button = next((button for button in self.gfx.style_buttons if button.isChecked()), None)
-        if checked_style_button:
-            self.app.set_graphics_style(checked_style_button.property("styleId"))
+            # Persist the modified Active.sav
+            self.app.save_graphics_file()
 
-        self.app.save_graphics_file()
-        
-        # Handle Shadow Setting - Fixed using objectName for image buttons
-        checked_shadow_button = next((button for button in self.gfx.shadow_buttons if button.isChecked()), None)
-        if checked_shadow_button:
-            shadow_val = "ON" if "enable" in checked_shadow_button.objectName().lower() else "OFF"
-            self.app.set_shadow(shadow_val)
+            # Shadow handling (selected_shadow is objectName or similar)
+            if self.selected_shadow:
+                shadow_val = "ON" if "enable" in str(self.selected_shadow).lower() else "OFF"
+                self.app.set_shadow(shadow_val)
 
-        self.app.push_active_shadow_file()
+            # Push both sav and ini to device to ensure effect
+            self.app.push_active_shadow_file()
 
-        if self.app.pubg_package == "com.pubg.krmobile" and self.ui.resolution_btn.isChecked():
-            self.app.kr_fullhd()
-        # Only start app if connected and package exists
-        elif self.app.pubg_package:
-            self.app.start_app()
+            # Apply device-specific resolution tweak if requested
+            if self.app.pubg_package == "com.pubg.krmobile" and self.resolution_checked:
+                self.app.kr_fullhd()
+            elif self.app.pubg_package:
+                self.app.start_app()
 
-        self.task_completed.emit()
+            self.task_completed.emit()
+        except Exception as e:
+            try:
+                self.app.logger.error(f"SubmitWorkerThread error: {e}")
+            except Exception:
+                pass
+            self.status.emit(f"Error applying graphics: {e}")
+            self.task_completed.emit()
 
 
 class ConnectWorkerThread(QThread):
     task_completed = pyqtSignal()
+    status = pyqtSignal(str)
+    error = pyqtSignal(str)
+    choose_version = pyqtSignal(list)
+    connected = pyqtSignal(str)
 
     def __init__(self, window, ui):
         super(ConnectWorkerThread, self).__init__()
@@ -60,15 +77,14 @@ class ConnectWorkerThread(QThread):
         self.app.get_graphics_file(pubg_package)
 
     def show_connection_error(self, message):
-        self.ui.connect_gameloop_btn.setChecked(False)
-        self.ui.connect_gameloop_btn.setText("Connect to Gameloop")
-        self.app.show_status_message(message)
+        # Emit an error for the UI to handle
+        self.error.emit(message)
         self.task_completed.emit()
 
     def run(self):
-        self.ui.connect_gameloop_btn.setText("Connecting...")
-        self.ui.connect_gameloop_btn.setEnabled(False)
-        self.app.show_status_message("Connecting to Gameloop...", 3)
+        # Signal UI that connection is starting
+        self.connected.emit("Connecting...")
+        self.status.emit("Connecting to Gameloop...")
         self.app.check_adb_status()
 
         if not self.app.adb_enabled:
@@ -91,21 +107,19 @@ class ConnectWorkerThread(QThread):
         num_found = len(self.app.PUBG_Found)
 
         if num_found == 0:
-            self.app.show_status_message("You don't have any PUBG Mobile version installed")
+            self.status.emit("You don't have any PUBG Mobile version installed")
             self.task_completed.emit()
             return
         elif num_found > 1:
-            self.ui.pubgchoose_dropdown.clear()
-            self.ui.pubgchoose_dropdown.addItems(self.app.PUBG_Found)
-            self.ui.pubgchoose_dropdown.setCurrentText(self.app.PUBG_Found[0])
-            self.ui.PubgchooseFrame.setVisible(True)
-            self.app.show_status_message("Select version to use")
+            # Ask UI to show choose dialog
+            self.choose_version.emit(self.app.PUBG_Found)
+            self.status.emit("Select version to use")
             self.task_completed.emit()
             return
 
-        self.app.show_status_message(f"Using version {self.app.PUBG_Found[0]}", 3)
+        self.status.emit(f"Using version {self.app.PUBG_Found[0]}")
         self.get_active_file(self.app.PUBG_Found[0])
-        self.ui.connect_gameloop_btn.setText("Connected")
+        self.connected.emit("Connected")
         self.task_completed.emit()
 
 
@@ -167,9 +181,24 @@ class GFX(QObject):
             self.ui.load_profile_btn.clicked.connect(self.load_profile)
 
     def gfx_submit_button_click(self):
+        # Collect current selections on the main thread (safe) and pass to worker
         self.ui.submit_gfx_btn.setEnabled(False)
-        self.worker_submit = SubmitWorkerThread(self.app, self.ui, self)
+        selected_graphics = next((b.text() for b in self.graphics_buttons if b.isChecked()), None)
+        selected_fps = next((b.text() for b in self.fps_buttons if b.isChecked()), None)
+        selected_style = next((b.property("styleId") for b in self.style_buttons if b.isChecked()), None)
+        selected_shadow = next((b.objectName() for b in self.shadow_buttons if b.isChecked()), None)
+        resolution_checked = getattr(self.ui, 'resolution_btn', None) and self.ui.resolution_btn.isChecked()
+
+        self.worker_submit = SubmitWorkerThread(
+            self.app, self.ui, self,
+            selected_graphics=selected_graphics,
+            selected_fps=selected_fps,
+            selected_style=selected_style,
+            selected_shadow=selected_shadow,
+            resolution_checked=resolution_checked
+        )
         self.worker_submit.task_completed.connect(self.submit_gfx_done)
+        self.worker_submit.status.connect(lambda msg, dur=5: self.app.show_status_message(msg, dur))
         self.worker_submit.start()
 
     def save_profile(self):
@@ -230,9 +259,16 @@ class GFX(QObject):
 
     def connect_gameloop_button_click(self, checked: bool):
         if checked:
+            # Update UI immediately, then start background worker which will emit signals
             self.ui.connect_gameloop_btn.setEnabled(False)
+            self.ui.connect_gameloop_btn.setText("Connecting...")
+
             self.worker = ConnectWorkerThread(self.app, self.ui)
             self.worker.task_completed.connect(self.connect_gameloop_task_completed)
+            self.worker.status.connect(lambda msg, dur=3: self.app.show_status_message(msg, dur))
+            self.worker.error.connect(self._on_connect_error)
+            self.worker.choose_version.connect(self._on_choose_version)
+            self.worker.connected.connect(lambda txt: self.ui.connect_gameloop_btn.setText(txt))
             self.worker.start()
         else:
             self.gfx_buttons(enabled=checked)
@@ -243,6 +279,35 @@ class GFX(QObject):
             self.app.kill_adb()
             self.ui.connect_gameloop_btn.setText("Connect to GameLoop")
             self.app.show_status_message("Disconnected.")
+
+    def _on_connect_error(self, message: str):
+        # Reset UI to disconnected state and show error
+        self.ui.connect_gameloop_btn.setChecked(False)
+        self.ui.connect_gameloop_btn.setText("Connect to GameLoop")
+        self.gfx_buttons(enabled=False)
+        try:
+            self.ui.disable_shadow_btn.setChecked(False)
+            self.ui.enable_shadow_btn.setChecked(False)
+            self.ui.ResolutionkrFrame.hide()
+            self.ui.PubgchooseFrame.hide()
+        except Exception:
+            pass
+        try:
+            self.app.kill_adb()
+        except Exception:
+            pass
+        self.app.show_status_message(message)
+
+    def _on_choose_version(self, versions: list):
+        try:
+            self.ui.pubgchoose_dropdown.clear()
+            self.ui.pubgchoose_dropdown.addItems(versions)
+            if versions:
+                self.ui.pubgchoose_dropdown.setCurrentText(versions[0])
+            self.ui.PubgchooseFrame.setVisible(True)
+            self.app.show_status_message("Select version to use")
+        except Exception:
+            self.app.show_status_message("Error preparing version chooser")
 
     def connect_gameloop_task_completed(self, checked: bool = True):
         self.ui.connect_gameloop_btn.setEnabled(True)

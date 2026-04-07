@@ -28,8 +28,10 @@ class DownloadThread(QThread):
             # Always download to the system TEMP folder to avoid Permission Denied
             # (the running EXE is locked; writing to Temp side-steps that)
             temp_dir = tempfile.gettempdir()
-            base_name = os.path.splitext(os.path.basename(self.filename))[0]
-            download_path = os.path.join(temp_dir, f"{base_name}_NEW.exe")
+            base_name, ext = os.path.splitext(os.path.basename(self.filename))
+            if not ext:
+                ext = '.tmp'
+            download_path = os.path.join(temp_dir, f"{base_name}_NEW{ext}")
 
             response = requests.get(self.url, stream=True, timeout=60)
             if response.status_code == 200:
@@ -119,7 +121,11 @@ class CheckUpdateThread(QThread):
             lat = self._normalize(latest_ver)
 
             if latest_ver and lat != cur and assets:
-                asset = assets[0]
+                # Prefer in-place patch assets (.zip) if present, otherwise fall back to first asset
+                asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.zip')), None)
+                if asset is None:
+                    asset = assets[0]
+
                 size_mb = round(asset.get("size", 0) / (1024 * 1024), 2)
                 changelog = _clean_changelog(raw_changelog)
                 self.update_available.emit(
@@ -230,6 +236,13 @@ class UpdateWindow(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
+        # If the asset is a zip patch, change label to indicate in-place patch
+        try:
+            if str(self.asset_name).lower().endswith('.zip'):
+                self.update_btn.setText("⬇  Apply Patch (In-Place)")
+        except Exception:
+            pass
+
         self.update_btn.clicked.connect(self.start_download)
         self.skip_btn.clicked.connect(self.skip_update)
 
@@ -267,11 +280,17 @@ class UpdateWindow(QMainWindow):
             return
 
         self._downloaded_path = path
-        self.title_label.setText("✅  Download complete! Launching new version...")
-        self.status_label.setText("Starting new version. This window will close.")
         self.progress_bar.setValue(100)
 
-        # In-place update: Write a batch script to replace the current EXE and restart
+        # If this is a zip patch, apply it in-place into user data directory
+        if str(path).lower().endswith('.zip'):
+            self._apply_patch_zip(path)
+            return
+
+        # Otherwise, assume an executable update (legacy behavior): replace current EXE
+        self.title_label.setText("✅  Download complete! Launching new version...")
+        self.status_label.setText("Starting new version. This window will close.")
+
         bat_path = os.path.join(tempfile.gettempdir(), "nitro_update_launcher.bat")
         current_exe = sys.executable
         try:
@@ -300,6 +319,52 @@ class UpdateWindow(QMainWindow):
                 pass
 
         QTimer.singleShot(1800, sys.exit)
+
+    def _apply_patch_zip(self, zip_path: str):
+        """Extract patch zip into user data dir (safe extraction) and restart app."""
+        try:
+            local_appdata = os.getenv('LOCALAPPDATA') or tempfile.gettempdir()
+            user_data_dir = os.path.join(local_appdata, 'NitroTools')
+            os.makedirs(user_data_dir, exist_ok=True)
+
+            with zipfile.ZipFile(zip_path, 'r') as z:
+                for member in z.infolist():
+                    member_name = member.filename
+                    # Skip absolute paths and attempts to traverse directories
+                    dest_path = os.path.join(user_data_dir, member_name)
+                    abs_dest = os.path.abspath(dest_path)
+                    abs_user = os.path.abspath(user_data_dir)
+                    if not abs_dest.startswith(abs_user + os.sep) and abs_dest != abs_user:
+                        continue
+
+                    if member.is_dir():
+                        os.makedirs(abs_dest, exist_ok=True)
+                        continue
+
+                    parent = os.path.dirname(abs_dest)
+                    if parent and not os.path.isdir(parent):
+                        os.makedirs(parent, exist_ok=True)
+
+                    with z.open(member) as source, open(abs_dest, 'wb') as target:
+                        data = source.read()
+                        target.write(data)
+
+            self.title_label.setText("✅  Patch applied successfully")
+            self.status_label.setText("Restarting application to apply changes...")
+
+            try:
+                subprocess.Popen([sys.executable] + sys.argv,
+                                 creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                                 close_fds=True)
+            except Exception:
+                try:
+                    os.startfile(sys.executable)
+                except Exception:
+                    pass
+
+            QTimer.singleShot(1200, sys.exit)
+        except Exception as e:
+            self._on_failed(f"Patch apply failed: {e}")
 
     def _on_failed(self, msg: str):
         self.title_label.setText(f"❌  Failed: {msg}")
