@@ -144,10 +144,15 @@ class CheckUpdateThread(QThread):
             assets = data.get("assets", [])
 
             if latest_ver and self._is_newer_version(latest_ver, self.current_version) and assets:
-                # Prefer in-place patch assets (.zip) if present, otherwise fall back to first asset
-                asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.zip')), None)
+                # Prefer .exe for direct executable replacement; fall back to .zip, then first non-checksum asset
+                asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.exe')), None)
                 if asset is None:
-                    asset = assets[0]
+                    asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.zip')), None)
+                if asset is None:
+                    asset = next((a for a in assets if not str(a.get('name', '')).lower().endswith('.sha256')), None)
+                if asset is None:
+                    self.no_update.emit()
+                    return
 
                 expected_bytes = int(asset.get("size", 0) or 0)
                 size_mb = round(expected_bytes / (1024 * 1024), 2)

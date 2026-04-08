@@ -9,216 +9,242 @@ import subprocess
 import tempfile
 import requests
 import hashlib
-import shutil
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QMessageBox, QApplication
 
 
-class AutoUpdater(QThread):
-    """
-    Automatic in-place updater that replaces the current executable
-    with the new version automatically.
-    """
-    
-    update_available = pyqtSignal(str, str, str)  # version, url, changelog
-    update_downloaded = pyqtSignal(str)  # download path
-    update_installed = pyqtSignal()  # update completed
-    update_failed = pyqtSignal(str)  # error message
-    progress_updated = pyqtSignal(int)  # progress percentage
-    
+class UpdateCheckThread(QThread):
+    """Background thread that checks GitHub for a newer release."""
+
+    # version, download_url, changelog
+    update_available = pyqtSignal(str, str, str)
+    no_update = pyqtSignal()
+    check_failed = pyqtSignal(str)
+
     def __init__(self, current_version, repo_api_url):
         super().__init__()
-        self.current_version = current_version
+        self.current_version = current_version.lstrip('v')
         self.repo_api_url = repo_api_url
-        self.running = True
-        
+
     def run(self):
-        """Main update process."""
-        try:
-            # Check for updates
-            if not self._check_for_updates():
-                return
-                
-            # Download update
-            download_path = self._download_update()
-            if not download_path:
-                return
-                
-            # Install update
-            self._install_update(download_path)
-            
-        except Exception as e:
-            self.update_failed.emit(f"Update failed: {str(e)}")
-    
-    def _check_for_updates(self):
-        """Check if a new version is available."""
         try:
             response = requests.get(self.repo_api_url, timeout=10)
-            if response.status_code == 200:
-                releases = response.json()
-                if releases:
-                    latest_release = releases[0]
-                    latest_version = latest_release['tag_name']
-                    
-                    # Remove 'v' prefix if present
-                    if latest_version.startswith('v'):
-                        latest_version = latest_version[1:]
-                    
-                    if self._is_newer_version(latest_version, self.current_version):
-                        # Find the executable asset
-                        download_url = None
-                        for asset in latest_release.get('assets', []):
-                            if asset['name'].endswith('.exe') or asset['name'].endswith('.zip'):
-                                download_url = asset['browser_download_url']
-                                break
-                        
-                        if download_url:
-                            changelog = latest_release.get('body', '')
-                            self.update_available.emit(latest_version, download_url, changelog)
-                            return True
-                            
+            if response.status_code != 200:
+                self.check_failed.emit(f"GitHub API returned {response.status_code}")
+                return
+
+            releases = response.json()
+            if not releases:
+                self.no_update.emit()
+                return
+
+            # API may return a list (multi-release endpoint) or a single object (/latest)
+            if isinstance(releases, list):
+                latest_release = releases[0]
+            else:
+                latest_release = releases
+
+            latest_version = latest_release.get('tag_name', '').lstrip('v')
+
+            if not latest_version or not self._is_newer(latest_version, self.current_version):
+                self.no_update.emit()
+                return
+
+            # Prefer .exe asset, then .zip, skip .sha256
+            asset = None
+            for ext in ('.exe', '.zip'):
+                asset = next((a for a in latest_release.get('assets', [])
+                              if str(a.get('name', '')).lower().endswith(ext)), None)
+                if asset:
+                    break
+            if asset is None:
+                # pick first non-sha256 asset
+                asset = next((a for a in latest_release.get('assets', [])
+                              if not str(a.get('name', '')).lower().endswith('.sha256')), None)
+            if asset is None:
+                self.no_update.emit()
+                return
+
+            download_url = asset.get('browser_download_url', '')
+            changelog = latest_release.get('body', '') or ''
+            self.update_available.emit(latest_version, download_url, changelog)
+
+        except requests.exceptions.ConnectionError:
+            self.check_failed.emit("No internet connection.")
+        except requests.exceptions.Timeout:
+            self.check_failed.emit("Connection timed out.")
         except Exception as e:
-            self.update_failed.emit(f"Failed to check for updates: {str(e)}")
-            
-        return False
-    
-    def _is_newer_version(self, latest, current):
-        """Compare version strings."""
-        def version_tuple(v):
-            # Remove 'v' prefix and split
-            v = v.lstrip('v')
-            return tuple(map(int, (v.split("."))))
-        
-        return version_tuple(latest) > version_tuple(current)
-    
-    def _download_update(self):
-        """Download the update file."""
+            self.check_failed.emit(str(e))
+
+    @staticmethod
+    def _is_newer(latest: str, current: str) -> bool:
         try:
-            # Get download info from signal (this should be stored)
-            if not hasattr(self, '_download_url'):
-                return None
-                
-            # Download to temp directory
+            return tuple(map(int, latest.split('.'))) > tuple(map(int, current.split('.')))
+        except Exception:
+            return latest != current
+
+
+class UpdateDownloadThread(QThread):
+    """Background thread that downloads an update file."""
+
+    progress = pyqtSignal(int)
+    completed = pyqtSignal(str)  # downloaded file path
+    failed = pyqtSignal(str)
+
+    def __init__(self, download_url):
+        super().__init__()
+        self.download_url = download_url
+        self.running = True
+
+    def run(self):
+        try:
             temp_dir = tempfile.gettempdir()
-            filename = f"NITROTOOLS_UPDATE_{self.current_version}_to_latest.exe"
-            download_path = os.path.join(temp_dir, filename)
-            
-            response = requests.get(self._download_url, stream=True, timeout=60)
-            if response.status_code == 200:
-                total_size = int(response.headers.get('content-length', 0))
-                downloaded = 0
-                
-                with open(download_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if not self.running:
-                            return None
-                        f.write(chunk)
-                        downloaded += len(chunk)
-                        if total_size > 0:
-                            progress = int((downloaded / total_size) * 100)
-                            self.progress_updated.emit(progress)
-                
-                self.update_downloaded.emit(download_path)
-                return download_path
-                
+            download_path = os.path.join(temp_dir, "NITROTOOLS_UPDATE.exe")
+
+            response = requests.get(self.download_url, stream=True, timeout=300)
+            if response.status_code != 200:
+                self.failed.emit(f"Download failed: HTTP {response.status_code}")
+                return
+
+            total_size = int(response.headers.get('content-length', 0))
+            downloaded = 0
+
+            with open(download_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if not self.running:
+                        self.failed.emit("Download cancelled.")
+                        return
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size > 0:
+                        self.progress.emit(int((downloaded / total_size) * 100))
+
+            self.progress.emit(100)
+            self.completed.emit(download_path)
+
         except Exception as e:
-            self.update_failed.emit(f"Download failed: {str(e)}")
-            
-        return None
-    
-    def _install_update(self, update_path):
-        """Install the update by replacing the current executable."""
-        try:
-            # Get current executable path
-            current_exe = sys.executable
-            current_dir = os.path.dirname(current_exe)
-            
-            # Get the update script path
-            script_path = os.path.join(current_dir, "src", "update_script.py")
-            
-            # Launch update script and exit current application
-            subprocess.Popen([
-                sys.executable, script_path, current_exe, update_path
-            ], creationflags=subprocess.CREATE_NEW_CONSOLE)
-            
-            # Signal that update is being installed
-            self.update_installed.emit()
-            
-            # Exit current application to allow update
-            QApplication.quit()
-            
-        except Exception as e:
-            self.update_failed.emit(f"Installation failed: {str(e)}")
-    
-    def set_download_info(self, download_url):
-        """Set download URL for the update."""
-        self._download_url = download_url
-    
+            self.failed.emit(f"Download error: {e}")
+
     def stop(self):
-        """Stop the update process."""
         self.running = False
 
 
 class AutoUpdateManager:
     """
     Manager class for handling automatic updates with user interaction.
+    Orchestrates check → prompt → download → install flow.
     """
-    
+
     def __init__(self, parent_window, current_version, repo_api_url):
         self.parent_window = parent_window
         self.current_version = current_version
         self.repo_api_url = repo_api_url
-        self.updater = None
-        
+        self._checker = None
+        self._downloader = None
+        self._pending_url = None
+
     def check_for_updates(self):
         """Check for updates in background."""
-        self.updater = AutoUpdater(self.current_version, self.repo_api_url)
-        self.updater.update_available.connect(self._on_update_available)
-        self.updater.update_downloaded.connect(self._on_update_downloaded)
-        self.updater.update_installed.connect(self._on_update_installed)
-        self.updater.update_failed.connect(self._on_update_failed)
-        self.updater.progress_updated.connect(self._on_progress_updated)
-        self.updater.start()
-    
+        self._checker = UpdateCheckThread(self.current_version, self.repo_api_url)
+        self._checker.update_available.connect(self._on_update_available)
+        self._checker.no_update.connect(self._on_no_update)
+        self._checker.check_failed.connect(self._on_check_failed)
+        self._checker.start()
+
+    # -- Signals from check thread --
+
     def _on_update_available(self, version, url, changelog):
-        """Handle update available notification."""
+        """Prompt the user to download the new version."""
+        clean_log = changelog[:500].strip()
+        if len(changelog) > 500:
+            clean_log += "\n..."
+
         reply = QMessageBox.question(
             self.parent_window,
-            "NITROTOOLS Update Available",
-            f"New version {version} is available!\n\n"
-            f"Current version: {self.current_version}\n"
-            f"New version: {version}\n\n"
-            f"Changelog:\n{changelog[:300]}...\n\n"
-            f"Do you want to update automatically?",
+            "NITROTOOLS — Update Available",
+            f"A new version is available!\n\n"
+            f"Current: v{self.current_version.lstrip('v')}\n"
+            f"Latest:  v{version}\n\n"
+            f"{clean_log}\n\n"
+            f"Download and install now?",
             QMessageBox.Yes | QMessageBox.No
         )
-        
+
         if reply == QMessageBox.Yes:
-            self.updater.set_download_info(url)
-            # Show progress dialog or update status
-            self.parent_window.show_status_message("Downloading update...")
+            self._start_download(url)
         else:
-            self.updater.stop()
-    
-    def _on_update_downloaded(self, path):
-        """Handle download completion."""
-        self.parent_window.show_status_message("Installing update...")
-        # Installation will happen automatically
-    
-    def _on_update_installed(self):
-        """Handle successful installation."""
-        self.parent_window.show_status_message("Update installed! Restarting...")
-        # Application will restart automatically
-    
-    def _on_update_failed(self, error):
-        """Handle update failure."""
+            self.parent_window.show_status_message("Update skipped.")
+
+    def _on_no_update(self):
+        self.parent_window.show_status_message("You are on the latest version.")
+
+    def _on_check_failed(self, error):
+        self.parent_window.show_status_message(f"Update check failed: {error}")
+
+    # -- Download --
+
+    def _start_download(self, url):
+        self.parent_window.show_status_message("Downloading update...")
+        self._downloader = UpdateDownloadThread(url)
+        self._downloader.progress.connect(self._on_download_progress)
+        self._downloader.completed.connect(self._on_download_complete)
+        self._downloader.failed.connect(self._on_download_failed)
+        self._downloader.start()
+
+    def _on_download_progress(self, pct):
+        self.parent_window.show_status_message(f"Downloading update... {pct}%")
+
+    def _on_download_complete(self, path):
+        self.parent_window.show_status_message("Download complete. Installing...")
+        self._install_update(path)
+
+    def _on_download_failed(self, error):
         QMessageBox.critical(
             self.parent_window,
             "Update Failed",
-            f"Failed to update NITROTOOLS:\n{error}\n\n"
-            "Please download the update manually from GitHub."
+            f"Failed to download update:\n{error}\n\n"
+            "Please download manually from GitHub."
         )
-    
-    def _on_progress_updated(self, progress):
-        """Handle progress updates."""
-        self.parent_window.show_status_message(f"Downloading update... {progress}%")
+        self.parent_window.show_status_message("Update download failed.")
+
+    # -- Install --
+
+    def _install_update(self, update_path):
+        """Replace current EXE via a batch script, then restart."""
+        try:
+            current_exe = sys.executable
+
+            bat_path = os.path.join(tempfile.gettempdir(), "nitro_update.bat")
+            with open(bat_path, "w") as bat:
+                bat.write('@echo off\n')
+                bat.write('echo Updating NITROTOOLS, please wait...\n')
+                bat.write('set count=0\n')
+                bat.write(':wait_loop\n')
+                bat.write('timeout /t 1 /nobreak >nul\n')
+                bat.write(f'del /Q "{current_exe}" >nul 2>&1\n')
+                bat.write(f'if exist "{current_exe}" (\n')
+                bat.write('  set /a count+=1\n')
+                bat.write('  if %count% LSS 15 goto wait_loop\n')
+                bat.write(')\n')
+                bat.write(f'move /Y "{update_path}" "{current_exe}" >nul\n')
+                bat.write(f'start "" "{current_exe}"\n')
+                bat.write('del "%~f0"\n')
+
+            subprocess.Popen(
+                ['cmd', '/c', bat_path],
+                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                close_fds=True
+            )
+
+            self.parent_window.show_status_message("Restarting with new version...")
+            QTimer.singleShot(1500, QApplication.quit)
+
+        except Exception as e:
+            QMessageBox.critical(
+                self.parent_window,
+                "Install Failed",
+                f"Could not install update:\n{e}\n\n"
+                f"The downloaded file is at:\n{update_path}\n"
+                "You can replace the EXE manually."
+            )
+            self.parent_window.show_status_message("Update install failed.")
