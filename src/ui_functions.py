@@ -397,8 +397,11 @@ class Window(QtWidgets.QMainWindow, Game):
     def _on_stats_updated(self, stats: dict):
         """Update live dashboard stats and run AI Dynamic Optimizer."""
         fps = int(stats['fps'])
+        fps_source = stats.get('fps_source', 'estimate')
         fps_str = f"{fps:02d}" if fps < 100 else str(fps)
-        self.header_fps_label.setText(f"{fps_str} FPS")
+        # ~ prefix = estimated (no ADB), no prefix = real ADB data
+        prefix = "" if fps_source == "real" else "~"
+        self.header_fps_label.setText(f"{prefix}{fps_str} FPS")
         
         # Color based on FPS quality
         if fps >= 85: color = "#00ffca"

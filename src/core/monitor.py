@@ -1,5 +1,6 @@
 import random
 import subprocess
+import time
 import psutil
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 from typing import Dict, Any, List
@@ -31,6 +32,10 @@ class MonitorStats(QThread):
         
         # Detect GPU vendor on initialization
         self._detect_gpu_vendor()
+
+        # ADB real FPS state
+        self._adb = None
+        self._pubg_package = None
 
     def _detect_gpu_vendor(self):
         """Detect GPU vendor for appropriate monitoring methods."""
@@ -128,9 +133,54 @@ class MonitorStats(QThread):
         
         return stats
 
+    def set_adb(self, adb_device, package: str):
+        """Enable real FPS reading via ADB when GameLoop connects."""
+        self._adb = adb_device
+        self._pubg_package = package
+
+    def clear_adb(self):
+        """Disable real FPS reading when ADB disconnects."""
+        self._adb = None
+        self._pubg_package = None
+
+    def _get_real_fps(self) -> int:
+        """
+        Read real FPS from Android via dumpsys gfxinfo framestats.
+        Returns 0 if ADB not connected or data unavailable.
+        """
+        try:
+            output = self._adb.shell(
+                f"dumpsys gfxinfo {self._pubg_package} framestats", timeout=1
+            )
+            timestamps = []
+            for line in output.splitlines():
+                line = line.strip()
+                if not line or not (line[0].isdigit()):
+                    continue
+                parts = line.split(',')
+                if len(parts) < 14:
+                    continue
+                try:
+                    # Column 13 = FRAME_COMPLETED timestamp (nanoseconds)
+                    ts = int(parts[13])
+                    if ts > 0:
+                        timestamps.append(ts)
+                except (ValueError, IndexError):
+                    continue
+            if len(timestamps) < 5:
+                return 0
+            # FPS = (frames - 1) / elapsed_seconds
+            elapsed_ns = timestamps[-1] - timestamps[0]
+            if elapsed_ns <= 0:
+                return 0
+            fps = (len(timestamps) - 1) * 1_000_000_000 / elapsed_ns
+            return max(0, min(int(fps), 999))
+        except Exception:
+            return 0
+
     def _estimate_fps(self, gpu_load, cpu_process_load, gpu_memory_usage_percent=0):
         """
-        Enhanced FPS estimation with GPU memory consideration.
+        Fallback FPS estimation based on GPU/CPU load when ADB is unavailable.
         """
         if gpu_load == 0: return 0
         
@@ -211,16 +261,26 @@ class MonitorStats(QThread):
             # Get GameLoop process CPU usage for FPS estimation
             game_cpu_load = self._get_game_cpu_load()
 
-            # Enhanced FPS estimation with caching
-            stats["fps"] = self.performance_cache.cache.get_or_compute(
-                "fps_estimate",
-                lambda: self._estimate_fps(
-                    stats["gpu_percent"], 
-                    game_cpu_load, 
-                    stats.get("gpu_memory_percent", 0)
-                ),
-                0.5  # Cache FPS for 500ms
-            )
+            # Real FPS via ADB when connected, estimated otherwise
+            if self._adb and self._pubg_package:
+                real = self.performance_cache.cache.get_or_compute(
+                    "real_fps",
+                    self._get_real_fps,
+                    1  # Refresh every 1 second
+                )
+                stats["fps"] = real if real > 0 else self.performance_cache.cache.get_or_compute(
+                    "fps_estimate",
+                    lambda: self._estimate_fps(stats["gpu_percent"], game_cpu_load, stats.get("gpu_memory_percent", 0)),
+                    0.5
+                )
+                stats["fps_source"] = "real" if real > 0 else "estimate"
+            else:
+                stats["fps"] = self.performance_cache.cache.get_or_compute(
+                    "fps_estimate",
+                    lambda: self._estimate_fps(stats["gpu_percent"], game_cpu_load, stats.get("gpu_memory_percent", 0)),
+                    0.5
+                )
+                stats["fps_source"] = "estimate"
 
             # Network latency check with caching
             stats["network_latency"] = self.performance_cache.get_network_latency(

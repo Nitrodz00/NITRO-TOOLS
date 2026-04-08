@@ -10,19 +10,35 @@
 
 ---
 
-## 🚀 Latest Release: v3.1.2 (Final)
+## 🚀 Latest Release: v3.1.7
 
-### � Critical Bug Fixes
-- **Shadow Control Fix** — Shadow enable/disable now syncs correctly with device settings
-- **PUBG Global Shortcut Icon** — Added missing icon for PUBG Mobile Global desktop shortcuts
-- **File Path Fix** — Fixed broken file paths that prevented shadow/graphics operations
-- **Watcher Cleanup Fix** — Fixed timer cleanup on exit preventing memory leaks
-- **PyInstaller Import Fix** — Fixed import crash in packaged builds
+### 🔧 What's Fixed
+- **Shadow in Battle/Training** — Shadow now works in ALL modes (lobby + battle + training)
+- **Shortcuts** — Now works with all GameLoop versions including latest
+- **Real FPS** — Header now shows real FPS via ADB when connected (not estimated)
+- **No more DLL errors** — Installer-based distribution eliminates all DLL loading issues
 
-### 📦 How to Update
-1. Download **`NITROTOOLS_PUBG_MOBILE_v3.1.2.exe`** from [Releases](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)
-2. Replace your current executable (settings are preserved)
-3. Run as **Administrator**
+---
+
+## � Download & Install (New Users)
+
+### Step 1 — Download
+**[⬇️ Download NITROTOOLS_Setup_v3.1.7.exe](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)**
+
+### Step 2 — Install
+1. Right-click the installer → **Run as Administrator**
+2. Follow the setup wizard (takes ~30 seconds)
+3. Launch **NITROTOOLS PUBG MOBILE** from the desktop shortcut
+
+### Step 3 — Done ✅
+The tool auto-updates from inside the app — no manual downloads needed for future updates.
+
+---
+
+## 🔄 Updating from Older Versions (v3.1.6 and below)
+1. Open the tool → click **CHECK FOR UPDATES NOW**
+2. The new installer will download and run automatically
+3. Settings are preserved after update
 
 ---
 

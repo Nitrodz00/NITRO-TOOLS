@@ -314,6 +314,13 @@ class GFX(QObject):
         if not self.app.is_adb_working:
             return
 
+        # Enable real FPS reading in the monitor
+        try:
+            if hasattr(self.app, 'monitor') and self.app.pubg_package:
+                self.app.monitor.set_adb(self.app.adb, self.app.pubg_package)
+        except Exception:
+            pass
+
         # Synchronize UI with current game settings
         graphics_val = self.app.get_graphics_setting()
         for b in self.graphics_buttons:
