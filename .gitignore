@@ -11,14 +11,8 @@ build/
 !NITROTOOLS_RELEASE.spec
 *.egg-info/
 
-build_log.txt
-
 # Logs
 *.log
-error.log
-
-# PyInstaller output (keep spec for reference)
-dist/
 
 # Virtual environments
 venv/
@@ -33,12 +27,29 @@ env/
 Thumbs.db
 desktop.ini
 
-# Temp scripts (dev only)
+# Temp & dev-only scripts
 apply_final_tweaks.py
 change_icon.py
 modify_ui.py
 strip_mk.py
 test_gui.py
+test_imports.py
+temp_release_check.py
+create_release*.py
+build_v*.ps1
+
+# Build artifacts & releases
 *.zip
-release_v3.1.0/
+*.jpg
+release_v*/
 temp_patch/
+temp_hotfix*/
+full_patch/
+analyze_v*/
+artifacts/
+BUILD_REPORT*
+CHANGELOG_v*.md
+IMPROVEMENTS_SUMMARY.md
+release-notes*
+ipad_layout.json
+build_log.txt

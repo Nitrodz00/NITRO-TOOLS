@@ -115,6 +115,22 @@ class CheckUpdateThread(QThread):
     def _normalize(v: str) -> str:
         return v.strip().lower().lstrip("v") if v else ""
 
+    @staticmethod
+    def _version_tuple(v: str) -> tuple:
+        """Convert version string to tuple for comparison."""
+        v = v.strip().lower().lstrip("v")
+        return tuple(map(int, (v.split("."))))
+
+    def _is_newer_version(self, latest: str, current: str) -> bool:
+        """Check if latest version is newer than current."""
+        try:
+            latest_tuple = self._version_tuple(latest)
+            current_tuple = self._version_tuple(current)
+            return latest_tuple > current_tuple
+        except:
+            # Fallback to string comparison if version parsing fails
+            return self._normalize(latest) != self._normalize(current)
+
     def run(self):
         try:
             resp = requests.get(self.repo_url, timeout=6)
@@ -127,10 +143,7 @@ class CheckUpdateThread(QThread):
             raw_changelog = data.get("body", "")
             assets = data.get("assets", [])
 
-            cur = self._normalize(self.current_version)
-            lat = self._normalize(latest_ver)
-
-            if latest_ver and lat != cur and assets:
+            if latest_ver and self._is_newer_version(latest_ver, self.current_version) and assets:
                 # Prefer in-place patch assets (.zip) if present, otherwise fall back to first asset
                 asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.zip')), None)
                 if asset is None:

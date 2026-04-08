@@ -1,11 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 # NITROTOOLS PUBG MOBILE - Build Specification
-# Version: v3.1.0
+# Version: v3.1.2
 # Author: Nitrodz00s
 import os
 from PyInstaller.utils.hooks import collect_all, copy_metadata
 
-_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v3.1.0")
+_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v3.1.2")
 
 datas = [('assets', 'assets')]
 binaries = []
@@ -27,6 +27,25 @@ hiddenimports = [
     'scipy',
     'sklearn',
     'src.ui_images.resources_rc',
+    'src',
+    'src.ui_functions',
+    'src.core',
+    'src.core.optimizer',
+    'src.core.watcher',
+    'src.core.monitor',
+    'src.core.ai_engine',
+    'src.core.expert_mode',
+    'src.core.cache_manager',
+    'src.core.compatibility_manager',
+    'src.update',
+    'src.auto_updater',
+    'src.update_script',
+    'src.gfx',
+    'src.other',
+    'src.system',
+    'src.ui',
+    'src.ui_expert',
+    'src.app_functions',
     'PIL',
     'PIL.Image',
     'pkg_resources',
@@ -48,7 +67,7 @@ hiddenimports += st_ret[2]
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,

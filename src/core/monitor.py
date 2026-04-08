@@ -2,6 +2,7 @@ import random
 import subprocess
 import psutil
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+from typing import Dict, Any, List
 
 from .cache_manager import get_cache_manager, PerformanceCache
 

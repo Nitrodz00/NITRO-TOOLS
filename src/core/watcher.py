@@ -1,6 +1,5 @@
 import psutil
-from PyQt5.QtCore import QThread, pyqtSignal
-from time import sleep
+from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 
 class GameWatcher(QThread):
     """Watcher thread to detect game launch and apply real-time optimizations (Auto-Boost)."""
@@ -15,41 +14,56 @@ class GameWatcher(QThread):
         self.telemetry_killers = ['Syzs_dl_svr.exe', 'QMEmulatorService.exe', 'TBSWebRenderer.exe']
         # Keep reference to main window if provided so watcher can call higher-level tweaks
         self.window = parent
+        self.poll_timer = QTimer()
+        self.poll_timer.timeout.connect(self._check_processes)
+        self.target_procs_lower = [p.lower() for p in self.target_processes]
+        self.killer_procs_lower = [p.lower() for p in self.telemetry_killers]
 
     def run(self):
-        """Monitor processes in a loop with low overhead."""
-        target_procs_lower = [p.lower() for p in self.target_processes]
-        killer_procs_lower = [p.lower() for p in self.telemetry_killers]
-        
-        while self.running:
-            try:
-                current_running = False
-                for proc in psutil.process_iter(['name', 'nice', 'cpu_affinity']):
-                    try:
-                        name_lower = proc.info['name'].lower()
-                        
-                        if name_lower in target_procs_lower:
-                            current_running = True
-                            self._apply_boost(proc)
-                        
-                        # Kill redundant background trackers
-                        if name_lower in killer_procs_lower:
-                            try:
-                                proc.terminate()
-                            except:
-                                pass
-                    except (psutil.NoSuchProcess, psutil.AccessDenied):
-                        continue
-                
-                if current_running != self.game_running:
-                    self.game_running = current_running
-                    self.game_detected.emit(current_running)
+        """Start the monitoring timer."""
+        self.poll_timer.start(4000)  # Start with 4 second interval
+        self.exec()  # Start event loop
+
+    def _check_processes(self):
+        """Check processes using QTimer for responsive UI."""
+        try:
+            current_running = False
+            for proc in psutil.process_iter(['name', 'nice', 'cpu_affinity']):
+                try:
+                    name_lower = proc.info['name'].lower()
                     
-            except Exception:
-                pass
+                    if name_lower in self.target_procs_lower:
+                        current_running = True
+                        self._apply_boost(proc)
+                    
+                    # Kill redundant background trackers
+                    if name_lower in self.killer_procs_lower:
+                        try:
+                            proc.terminate()
+                        except:
+                            pass
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
             
-            # Use adaptive polling - check slower when inactive, faster when game is on
-            sleep(4 if self.game_running else 8) # Faster check when game_running, slower when idle
+            if current_running != self.game_running:
+                self.game_running = current_running
+                self.game_detected.emit(current_running)
+                
+            # Adaptive polling - check faster when game is running
+            new_interval = 2000 if self.game_running else 4000
+            if self.poll_timer.interval() != new_interval:
+                self.poll_timer.setInterval(new_interval)
+                
+        except Exception:
+            pass
+
+    def stop(self):
+        """Stop the monitoring thread."""
+        self.running = False
+        if self.poll_timer.isActive():
+            self.poll_timer.stop()
+        self.quit()
+        self.wait()
 
     def _apply_boost(self, proc):
         """Apply High Priority and CPU Affinity."""
@@ -85,6 +99,3 @@ class GameWatcher(QThread):
         except Exception:
             pass
 
-    def stop(self):
-        self.running = False
-        self.wait()

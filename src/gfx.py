@@ -330,7 +330,7 @@ class GFX(QObject):
         shadow_val = self.app.get_shadow()
         for b in self.shadow_buttons:
             is_enabled = "enable" in b.objectName().lower()
-            if (shadow_val == "ON" and is_enabled) or (shadow_val != "ON" and not is_enabled):
+            if (shadow_val == "Enable" and is_enabled) or (shadow_val == "Disable" and not is_enabled):
                 b.setChecked(True)
 
         self.gfx_buttons(enabled=True)

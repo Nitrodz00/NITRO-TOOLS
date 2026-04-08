@@ -54,10 +54,10 @@ class Settings:
             except Exception:
                 pass
 
-        _copy_default(r'assets\\user.ini', 'user.ini')
+        _copy_default(r'assets\user.ini', 'user.ini')
         _copy_default('assets/old.sav', 'old.sav')
         _copy_default('assets/new.sav', 'new.sav')
-        _copy_default(r'assets\\testADB.prop', 'testADB.prop')
+        _copy_default(r'assets\testADB.prop', 'testADB.prop')
         
         # Add Gameloop UI path to ENV PATH so adbutils can find adb.exe
         try:
@@ -1149,7 +1149,7 @@ class Game(Optimizer):
             # If pull fails, fall back to existing local copy or packaged asset
             if not os.path.exists(local_ini):
                 try:
-                    shutil.copy2(self.resource_path(r"assets\\user.ini"), local_ini)
+                    shutil.copy2(self.resource_path(r"assets\user.ini"), local_ini)
                 except Exception:
                     pass
 
@@ -1175,7 +1175,7 @@ class Game(Optimizer):
         except Exception:
             # As a final fallback try packaged asset
             try:
-                with open(self.resource_path(r"assets\\user.ini"), 'r', encoding='utf-8') as file:
+                with open(self.resource_path(r"assets\user.ini"), 'r', encoding='utf-8') as file:
                     for line in file:
                         line = line.strip()
                         if not line.startswith('+CVars='):
@@ -1334,9 +1334,9 @@ class Game(Optimizer):
             new_sav_src = os.path.join(self.user_data_dir, 'new.sav')
             user_ini_src = os.path.join(self.user_data_dir, 'user.ini')
             if not os.path.exists(new_sav_src):
-                new_sav_src = self.resource_path(r"assets\\new.sav")
+                new_sav_src = self.resource_path(r"assets\new.sav")
             if not os.path.exists(user_ini_src):
-                user_ini_src = self.resource_path(r"assets\\user.ini")
+                user_ini_src = self.resource_path(r"assets\user.ini")
 
             files = [
                 (new_sav_src, f"{data_dir}/SaveGames/Active.sav"),

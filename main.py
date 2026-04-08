@@ -9,19 +9,91 @@ try:
 except ImportError:
     pass
 
-# Allow user-data overrides for hot-updates: if a user_data_dir contains a 'src' package
-# insert it at front of sys.path so runtime can import patched modules from there.
-try:
-    local_appdata = os.getenv('LOCALAPPDATA') or tempfile.gettempdir()
-    user_data_dir = os.path.join(local_appdata, 'NitroTools')
-    if os.path.isdir(user_data_dir) and user_data_dir not in sys.path:
-        sys.path.insert(0, user_data_dir)
-except Exception:
-    pass
+# CRITICAL: Fix path issues for both development and packaged environments
+def setup_python_path():
+    """Setup Python path for proper module imports."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Add current directory to sys.path if not already there
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    
+    # For PyInstaller one-file executable, add the parent directory
+    if getattr(sys, 'frozen', False):
+        # Running in a PyInstaller bundle
+        if hasattr(sys, '_MEIPASS'):
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(sys.executable)
+        
+        if base_path not in sys.path:
+            sys.path.insert(0, base_path)
+        
+        # CRITICAL: Also add the src directory path for PyInstaller
+        src_path = os.path.join(base_path, 'src')
+        if os.path.exists(src_path) and src_path not in sys.path:
+            sys.path.insert(0, src_path)
+    
+    # For development, also add src directory
+    src_path_dev = os.path.join(current_dir, 'src')
+    if os.path.exists(src_path_dev) and src_path_dev not in sys.path:
+        sys.path.insert(0, src_path_dev)
+    
+    # Allow user-data overrides for hot-updates
+    try:
+        local_appdata = os.getenv('LOCALAPPDATA') or tempfile.gettempdir()
+        user_data_dir = os.path.join(local_appdata, 'NitroTools')
+        if os.path.isdir(user_data_dir) and user_data_dir not in sys.path:
+            sys.path.insert(0, user_data_dir)
+    except Exception:
+        pass
 
-from src.ui_functions import Window, QtWidgets
-from src.update import UpdateWindow, CheckUpdateThread
-from PyQt5 import QtCore, QtGui
+# Setup paths before importing
+setup_python_path()
+
+# Now try imports with error handling - try multiple import methods
+import_success = False
+import_error = None
+
+try:
+    # Method 1: Try importing with src prefix (development)
+    from src.ui_functions import Window
+    from src.update import UpdateWindow, CheckUpdateThread
+    from PyQt5 import QtCore, QtGui, QtWidgets
+    import_success = True
+except ImportError as e:
+    import_error = e
+    try:
+        # Method 2: Try importing without src prefix (PyInstaller)
+        from ui_functions import Window
+        from update import UpdateWindow, CheckUpdateThread
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        import_success = True
+    except ImportError as e2:
+        import_error = e2
+
+if not import_success:
+    print(f"Import Error: {import_error}")
+    print("Current Python path:")
+    for p in sys.path:
+        print(f"  {p}")
+    print("Current working directory:", os.getcwd())
+    print("Script directory:", os.path.dirname(os.path.abspath(__file__)))
+    
+    # Show error message in GUI if possible, otherwise exit
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        messagebox.showerror("Import Error", f"Failed to import required modules:\n{import_error}\n\nPlease check the installation.")
+        root.destroy()
+    except:
+        pass  # If even tkinter fails, just exit
+    
+    sys.exit(1)
+
 from os import environ
 
 APP_NAME = "NITROTOOLS PUBG MOBILE"
@@ -212,7 +284,6 @@ def on_update_available(latest_version, download_url, asset_name, expected_bytes
 def run_application():
     global _main_window
     try:
-        from src.ui_functions import Window
         _main_window = Window(APP_NAME, APP_VERSION)
         _main_window.show()
         return _main_window
