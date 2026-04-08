@@ -144,8 +144,12 @@ class CheckUpdateThread(QThread):
             assets = data.get("assets", [])
 
             if latest_ver and self._is_newer_version(latest_ver, self.current_version) and assets:
-                # Prefer .exe for direct executable replacement; fall back to .zip, then first non-checksum asset
-                asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.exe')), None)
+                # Prefer Setup installer, then any .exe, then .zip, skip checksums
+                asset = next((a for a in assets if 'setup' in str(a.get('name', '')).lower()
+                              and str(a.get('name', '')).lower().endswith('.exe')), None)
+                if asset is None:
+                    asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.exe')
+                                  and 'sha256' not in str(a.get('name', '')).lower()), None)
                 if asset is None:
                     asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.zip')), None)
                 if asset is None:

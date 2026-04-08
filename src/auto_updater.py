@@ -210,33 +210,33 @@ class AutoUpdateManager:
     # -- Install --
 
     def _install_update(self, update_path):
-        """Replace current EXE via a batch script, then restart."""
+        """Run the downloaded installer silently, then quit so it can replace files."""
         try:
-            current_exe = sys.executable
+            name = os.path.basename(update_path).lower()
+            if name.endswith('_setup.exe') or 'setup' in name:
+                # Inno Setup installer: run silently
+                subprocess.Popen(
+                    [update_path, '/SILENT', '/NORESTART', '/CLOSEAPPLICATIONS'],
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                    close_fds=True
+                )
+            else:
+                # Legacy: replace EXE via batch
+                current_exe = sys.executable
+                bat_path = os.path.join(tempfile.gettempdir(), "nitro_update.bat")
+                with open(bat_path, "w") as bat:
+                    bat.write('@echo off\n')
+                    bat.write('timeout /t 2 /nobreak >nul\n')
+                    bat.write(f'move /Y "{update_path}" "{current_exe}" >nul\n')
+                    bat.write(f'start "" "{current_exe}"\n')
+                    bat.write('del "%~f0"\n')
+                subprocess.Popen(
+                    ['cmd', '/c', bat_path],
+                    creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                    close_fds=True
+                )
 
-            bat_path = os.path.join(tempfile.gettempdir(), "nitro_update.bat")
-            with open(bat_path, "w") as bat:
-                bat.write('@echo off\n')
-                bat.write('echo Updating NITROTOOLS, please wait...\n')
-                bat.write('set count=0\n')
-                bat.write(':wait_loop\n')
-                bat.write('timeout /t 1 /nobreak >nul\n')
-                bat.write(f'del /Q "{current_exe}" >nul 2>&1\n')
-                bat.write(f'if exist "{current_exe}" (\n')
-                bat.write('  set /a count+=1\n')
-                bat.write('  if %count% LSS 15 goto wait_loop\n')
-                bat.write(')\n')
-                bat.write(f'move /Y "{update_path}" "{current_exe}" >nul\n')
-                bat.write(f'start "" "{current_exe}"\n')
-                bat.write('del "%~f0"\n')
-
-            subprocess.Popen(
-                ['cmd', '/c', bat_path],
-                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
-                close_fds=True
-            )
-
-            self.parent_window.show_status_message("Restarting with new version...")
+            self.parent_window.show_status_message("Installing update...")
             QTimer.singleShot(1500, QApplication.quit)
 
         except Exception as e:
@@ -244,7 +244,7 @@ class AutoUpdateManager:
                 self.parent_window,
                 "Install Failed",
                 f"Could not install update:\n{e}\n\n"
-                f"The downloaded file is at:\n{update_path}\n"
-                "You can replace the EXE manually."
+                f"Downloaded file: {update_path}\n"
+                "Please run it manually."
             )
             self.parent_window.show_status_message("Update install failed.")
