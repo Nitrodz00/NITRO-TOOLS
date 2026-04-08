@@ -893,7 +893,11 @@ class Game(Optimizer):
                 return False
 
             # Handle icon copying with better error handling
-            icon_source = self.resource_path(fr"assets\icons\{version_id}.ico")
+            _patch_icon = os.path.join(
+                os.environ.get('LOCALAPPDATA', ''), 'NitroTools',
+                'assets', 'icons', f'{version_id}.ico'
+            )
+            icon_source = _patch_icon if os.path.exists(_patch_icon) else self.resource_path(fr"assets\icons\{version_id}.ico")
             icon_dest = os.path.join(gameloop_ui_path, f"{version_id}.ico")
             
             try:
