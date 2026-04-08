@@ -52,6 +52,29 @@ def setup_python_path():
 # Setup paths before importing
 setup_python_path()
 
+# Pre-load any patched modules from user data dir so relative imports pick them up
+def _load_user_patches():
+    import importlib.util
+    _patch_dir = os.path.join(os.getenv('LOCALAPPDATA', ''), 'NitroTools')
+    _mods = [
+        ('src.app_functions', 'src/app_functions.py'),
+        ('src.update',        'src/update.py'),
+        ('src.auto_updater',  'src/auto_updater.py'),
+        ('src.monitor',       'src/monitor.py'),
+    ]
+    for _name, _rel in _mods:
+        _path = os.path.join(_patch_dir, _rel)
+        if os.path.isfile(_path):
+            try:
+                _spec = importlib.util.spec_from_file_location(_name, _path)
+                _mod = importlib.util.module_from_spec(_spec)
+                sys.modules[_name] = _mod
+                _spec.loader.exec_module(_mod)
+            except Exception:
+                pass
+
+_load_user_patches()
+
 # Now try imports with error handling - try multiple import methods
 import_success = False
 import_error = None
