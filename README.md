@@ -56,7 +56,7 @@ Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 - **Hardware Watcher** — Live FPS, CPU, GPU, and RAM monitoring in the header overlay
 - **ML Learning** — Learns your hardware patterns for optimal settings over time
 
-### �️ GFX Settings Control
+### ⚙️ GFX Settings Control
 - **Graphics Quality** — Smooth, Balanced, HD, HDR, Ultra HD
 - **FPS Unlock** — 30, 40, 60, 90, 120 FPS options
 - **Shadow Toggle** — Enable/disable shadows with dual Active.sav + UserCustom.ini logic
@@ -68,7 +68,7 @@ Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 - **Fine-grained Control** — CPU affinity, shader cache, VSync, RAM cleanup intervals
 - **Profile Management** — Export/import custom optimization profiles
 
-### � GPU Support (NVIDIA + AMD + Intel)
+### 🖥️ GPU Support (NVIDIA + AMD + Intel)
 - **Auto Detection** — nvidia-smi, Radeon CLI, WMI fallback
 - **Vendor-Specific Optimization** — Tailored registry tweaks per GPU vendor
 - **NVIDIA Inspector** — Automatic NVIDIA profile optimization
@@ -83,7 +83,7 @@ Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 - **Responsive Design** — HD, 2K, 4K display support
 - **Multiple Themes** — Cosmic, Neon Green, Red Alert
 
-### �️ Toolkit
+### 🧰 Toolkit
 - **Desktop Shortcuts** — Auto-create PUBG shortcuts with correct icons (Global, KR, VN, TW, BGMI)
 - **iPad Resolution** — Custom resolution/aspect ratio for competitive advantage
 - **DNS Optimizer** — Quick-switch DNS servers (Google, Cloudflare, etc.)
