@@ -1,11 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 # NITROTOOLS PUBG MOBILE - Build Specification
-# Version: v3.1.3
+# Version: v3.1.4
 # Author: Nitrodz00s
 import os
 from PyInstaller.utils.hooks import collect_all, copy_metadata
 
-_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v3.1.3")
+_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v3.1.4")
 
 datas = [('assets', 'assets')]
 binaries = []
@@ -113,7 +113,7 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    runtime_tmpdir=None,
+    runtime_tmpdir=r'%LOCALAPPDATA%\NitroTools\runtime',
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
