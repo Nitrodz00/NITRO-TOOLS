@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import json
 import zipfile
 import tempfile
 import subprocess
@@ -458,6 +459,22 @@ class UpdateWindow(QMainWindow):
                     with z.open(member) as source, open(abs_dest, 'wb') as target:
                         data = source.read()
                         target.write(data)
+
+            # Mark patch as applied so it won't reappear
+            patch_log = os.path.join(
+                os.environ.get('LOCALAPPDATA', tempfile.gettempdir()),
+                'NitroTools', 'patches.json'
+            )
+            try:
+                with open(patch_log) as _f:
+                    _data = json.load(_f)
+            except Exception:
+                _data = {'applied': []}
+            patch_name = os.path.basename(zip_path).replace('_NEW.zip', '.zip')
+            if patch_name not in _data['applied']:
+                _data['applied'].append(patch_name)
+            with open(patch_log, 'w') as _f:
+                json.dump(_data, _f)
 
             self.title_label.setText("✅  Patch applied successfully")
             self.status_label.setText("Restarting application to apply changes...")
