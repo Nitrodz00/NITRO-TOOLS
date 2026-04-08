@@ -920,7 +920,7 @@ class Game(Optimizer):
             shortcut.WorkingDirectory = gameloop_ui_path
             
             # Enhanced arguments for better compatibility
-            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink -nouan"
+            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink -vm 100"
             shortcut.Description = f"Launch {game_name} - Optimized by NITROTOOLS"
             shortcut.WindowStyle = 1  # Normal window
             
