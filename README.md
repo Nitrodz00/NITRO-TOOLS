@@ -10,116 +10,81 @@
 
 ---
 
-## 🚀 Latest Release (v3.1.2) - Critical Patch Update
+## 🚀 Latest Release: v3.1.2 (Final)
 
-### 🚨 **Critical Fixes (All Users Should Update):**
-- **✅ ModuleNotFoundError Fixed:** Permanent solution for `src.ui_functions` import issues
-- **✅ RuntimeError Resolved:** Fixed `lost sys.stdin` error in packaged executables  
-- **✅ PyInstaller Compatibility:** Enhanced module inclusion and path handling
-- **✅ Robust Import System:** Multiple import methods with automatic fallback
-- **✅ Enhanced Error Handling:** GUI notifications instead of console input
+### � Critical Bug Fixes
+- **Shadow Control Fix** — Shadow enable/disable now syncs correctly with device settings
+- **PUBG Global Shortcut Icon** — Added missing icon for PUBG Mobile Global desktop shortcuts
+- **File Path Fix** — Fixed broken file paths that prevented shadow/graphics operations
+- **Watcher Cleanup Fix** — Fixed timer cleanup on exit preventing memory leaks
+- **PyInstaller Import Fix** — Fixed import crash in packaged builds
 
-### 📦 **Update Instructions:**
-1. Download `NITROTOOLS_PUBG_MOBILE_v3.1.2.exe`
+### 📦 How to Update
+1. Download **`NITROTOOLS_PUBG_MOBILE_v3.1.2.exe`** from [Releases](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)
 2. Replace your current executable (settings are preserved)
-3. All issues should be resolved automatically
+3. Run as **Administrator**
 
 ---
 
-## 🎯 Previous Features (v3.1.0) - Professional Grade Release
-
-### 🛠️ Engine & Shortcuts Fixes
-- **Dual Shadow Toggle:** New binary logic for `Active.sav` and `UserCustom.ini` ensuring engine responds to shadow on/off.
-- **Powerful Shortcuts:** Fixed the bug preventing emulator launch from shortcuts by fixing WorkingDirectory.
-
-### 🧠 AI Performance Optimizer (AI Optimizer)
-- **Smart Modes:** Automatic switching between `Low-End`, `Balanced`, and `Competitive` based on real-time resource usage.
-- **Hardware Monitor:** Live FPS, CPU, GPU, and RAM usage displayed at the top of the interface.
-
-### 🎨 Cyberpunk Cosmic Modern UI
-- **Futuristic Theme:** Dark cosmic gradients with neon accents and smooth animations.
-- **Responsive Design:** Fully scalable interface supporting HD, 2K, and 4K displays.
-- **Custom Icons:** Redesigned icons with hover effects and smooth transitions.
-
-### 🎛️ Expert Mode (Advanced)
-- **5 Categories:** Graphics, System, Network, Security, and Debug.
-- **50+ Settings:** Fine-tune every aspect of system performance.
-- **Real-time Monitoring:** Live performance graphs and resource usage.
-- **Profile Management:** Save and load custom optimization profiles.
-
-### 🛡️ Compatibility Manager
-- **System Detection:** Automatic detection of hardware and software conflicts.
-- **Conflict Resolution:** Smart resolution of common compatibility issues.
-- **Safe Mode:** Fallback options for problematic configurations.
-
-### 🚀 Full AMD GPU Support
-- **Radeon Detection:** Automatic detection and optimization for AMD GPUs.
-- **Driver Integration:** Seamless integration with AMD Radeon Software.
-- **Performance Profiles:** Custom performance profiles for different AMD GPUs.
-
-### 📊 Enhanced Performance Monitoring
-- **Real-time Stats:** Live monitoring of FPS, CPU, GPU, RAM, and network latency.
-- **Historical Data:** Performance history with graphs and trends.
-- **Alert System:** Automatic alerts for performance issues and bottlenecks.
-
-### ⚡ Responsive UI with QTimer
-- **Non-blocking Operations:** All background operations use QTimer for smooth UI.
-- **Fast Response:** Instant UI response even during heavy operations.
-- **Progress Indicators:** Visual feedback for all operations.
-
-### � Intelligent Caching System
-- **Memory Optimization:** 40% reduction in memory usage with smart caching.
-- **Faster Loading:** 60% faster startup times with preloaded cache.
-- **Cache Management:** Automatic cache cleanup and optimization.
-
-### 🚀 **Full AMD GPU Support**
-- **Complete AMD Detection:** Radeon Software CLI integration
-- **Vendor-Specific Monitoring:** AMD-specific performance metrics
-- **Universal GPU Detection:** Fallback to WMI for all GPU types
-- **Optimized Performance:** Vendor-tailored optimization strategies
-
-### 📦 **Intelligent Caching System**
-- **Thread-Safe Caching:** Multi-threaded caching with locks
-- **TTL Support:** Time-based cache expiration
-- **Specialized Caches:** Hardware, performance, and configuration caches
-- **Automatic Cleanup:** Memory-efficient cache management
-
-### 🎨 Multiple Theme Variants
-- **Cosmic Theme:** Original deep purple gradients
-- **Neon Green:** Cyberpunk green accents
-- **Red Alert:** High-contrast red theme
-
-### 🌡️ Thermal Management
-- **Real-time Temperature Monitoring:** CPU and GPU temps displayed in header
-- **Thermal Alerts:** Notifications for overheating conditions
-
-### 🔔 Windows Notifications
-- **Game Detection Alerts:** Toast notifications when GameLoop starts/stops
-- **Update Notifications:** System tray alerts for available updates
-
-### 🌍 Multi-Language Support
-- **English & Arabic:** Basic localization framework (expandable)
-
----
+## 🎯 Features
 
 ### 🧠 AI Dynamic Optimizer
-- **Intelligent Modes:** Automatically switches between `Low-End`, `Balanced`, and `Competitive` modes based on real-time resource usage.
-- **Hardware Watcher:** Real-time monitoring of **FPS, CPU, GPU, and RAM** directly in the header overlay.
+- **Smart Modes** — Auto-switches between `Low-End`, `Balanced`, and `Competitive` based on real-time CPU/GPU/RAM usage
+- **Hardware Watcher** — Live FPS, CPU, GPU, and RAM monitoring in the header overlay
+- **ML Learning** — Learns your hardware patterns for optimal settings over time
 
-### 🎨 Ultra-Modern Cosmic Theme
-- Professional Cyberpunk aesthetics with deep navy and cosmic purple gradients.
-- Neon interaction effects and refined typography for maximum readability.
+### �️ GFX Settings Control
+- **Graphics Quality** — Smooth, Balanced, HD, HDR, Ultra HD
+- **FPS Unlock** — 30, 40, 60, 90, 120 FPS options
+- **Shadow Toggle** — Enable/disable shadows with dual Active.sav + UserCustom.ini logic
+- **Style Presets** — Classic, Colorful, Realistic, Soft, Movie
+- **Profile Save/Load** — Save your custom GFX profiles
 
-### 🧹 Advanced System Optimization
-- **Temp Cleaner:** Wipes Gameloop ShaderCache and system temporary files.
-- **PC Optimizer:** Specific registry tweaks to reduce DPC latency and stabilize frametime.
-- **Auto-Priority:** Forces `AndroidEmulatorEn.exe` to high process priority in the background.
+### 🎛️ Expert Mode (50+ Settings)
+- **5 Categories** — CPU, GPU, Memory, Network, Advanced Tweaks
+- **Fine-grained Control** — CPU affinity, shader cache, VSync, RAM cleanup intervals
+- **Profile Management** — Export/import custom optimization profiles
 
-### 🛠️ Versatile Toolkit
-- iPad View (resolution customizer).
-- ADB Auto-Port Discovery for Gameloop.
-- Automated Desktop Shortcut creator for all PUBG Mobile versions.
-- Force Close & Cleanup tools.
+### � GPU Support (NVIDIA + AMD + Intel)
+- **Auto Detection** — nvidia-smi, Radeon CLI, WMI fallback
+- **Vendor-Specific Optimization** — Tailored registry tweaks per GPU vendor
+- **NVIDIA Inspector** — Automatic NVIDIA profile optimization
+
+### 📊 Real-time Performance Monitoring
+- **Live Stats** — FPS, CPU%, GPU%, RAM, GPU Temperature, Network Latency
+- **Performance Alerts** — Automatic warnings for thermal throttling, VRAM pressure, high latency
+- **Intelligent Caching** — Thread-safe TTL cache reducing memory usage by 40%
+
+### 🎨 Cyberpunk Cosmic UI
+- **Futuristic Theme** — Dark cosmic gradients with neon accents
+- **Responsive Design** — HD, 2K, 4K display support
+- **Multiple Themes** — Cosmic, Neon Green, Red Alert
+
+### �️ Toolkit
+- **Desktop Shortcuts** — Auto-create PUBG shortcuts with correct icons (Global, KR, VN, TW, BGMI)
+- **iPad Resolution** — Custom resolution/aspect ratio for competitive advantage
+- **DNS Optimizer** — Quick-switch DNS servers (Google, Cloudflare, etc.)
+- **Temp Cleaner** — Wipes ShaderCache and system temp files
+- **Force Close** — Kill all GameLoop processes instantly
+- **Ping Stabilizer** — Network optimization for lower latency
+
+### ⚡ System Tweaks
+- **High Priority** — Force game process to high priority
+- **CPU Affinity** — Dedicate CPU cores to the game
+- **RAM Cleaner** — Clear standby memory list
+- **Power Plan** — Switch to High/Ultimate Performance
+- **Auto-Boost** — Persistent background optimization while gaming
+
+### 🛡️ Compatibility Manager
+- **Hardware Detection** — Auto-detect conflicts and limitations
+- **Feature Gating** — Disable incompatible features automatically
+- **System Report** — Export full compatibility report
+
+### 🔔 System Integration
+- **Tray Icon** — Minimize to system tray
+- **Game Detection** — Auto-detect GameLoop launch/exit
+- **Auto-Update** — In-app update checking with integrity verification (SHA256)
+- **Single Instance** — Prevent multiple copies running
 
 ---
 
@@ -128,22 +93,7 @@
 **Latest build (public, no login required):**  
 [https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)
 
-- Open **Assets** on the latest release and download **`NITROTOOLS_PUBG_MOBILE_v*.exe`** (Windows 64-bit).
-- Releases are produced automatically when a version tag is pushed (see below). Anyone can download the attached `.exe`.
-
 > ⚠️ Run as **Administrator** for full functionality.
-
-### Publish a new downloadable release (maintainers)
-
-1. Bump `APP_VERSION` in `main.py` (e.g. `v2.2.1`) and commit.
-2. Create and push a matching Git tag:
-   ```bash
-   git tag v2.2.1
-   git push origin v2.2.1
-   ```
-3. GitHub Actions builds the EXE and attaches it to that release. Users get it from **Releases → latest**.
-
-Or run **Actions → Release Windows EXE → Run workflow** to build without a tag (artifact available from the workflow run).
 
 ---
 
@@ -154,13 +104,10 @@ pip install -r requirements.txt
 python main.py
 ```
 
-To build EXE locally (same output as CI):
+Build EXE locally:
 ```powershell
 .\build_release.ps1
 ```
-Or: `pip install -r requirements-build.txt` then `pyinstaller NITROTOOLS_RELEASE.spec` (set `PYINSTALLER_EXE_NAME` if you need a custom file name).
-
-**Latest Release: v3.1.2** - Critical Patch Update with permanent fixes for ModuleNotFoundError, RuntimeError, and PyInstaller compatibility issues. All v3.1.x users should update immediately.
 
 ---
 
@@ -174,8 +121,8 @@ Or: `pip install -r requirements-build.txt` then `pyinstaller NITROTOOLS_RELEASE
 
 ## 📬 Contact
 
-- GitHub: [Nitrodz00](https://github.com/Nitrodz00)
-- Repository: [NITRO-TOOLS](https://github.com/Nitrodz00/NITRO-TOOLS)
+- **GitHub:** [Nitrodz00](https://github.com/Nitrodz00)
+- **Repository:** [NITRO-TOOLS](https://github.com/Nitrodz00/NITRO-TOOLS)
 
 ---
 
