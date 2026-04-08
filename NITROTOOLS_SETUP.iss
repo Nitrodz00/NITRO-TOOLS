@@ -1,9 +1,9 @@
 #define AppName "NITROTOOLS PUBG MOBILE"
-#define AppVersion "3.1.7"
+#define AppVersion "3.1.8"
 #define AppPublisher "Nitrodz00"
 #define AppURL "https://github.com/Nitrodz00/NITRO-TOOLS"
-#define AppExeName "NITROTOOLS_PUBG_MOBILE_v3.1.7.exe"
-#define AppDir "NITROTOOLS_PUBG_MOBILE_v3.1.7"
+#define AppExeName "NITROTOOLS_PUBG_MOBILE_v3.1.8.exe"
+#define AppDir "NITROTOOLS_PUBG_MOBILE_v3.1.8"
 
 [Setup]
 AppId={{A8B3C4D5-E6F7-4890-ABCD-EF1234567890}
@@ -18,7 +18,7 @@ DefaultDirName={autopf}\NitroTools
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=dist
-OutputBaseFilename=NITROTOOLS_Setup_v3.1.7
+OutputBaseFilename=NITROTOOLS_Setup_v3.1.8
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern

@@ -1,11 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 # NITROTOOLS PUBG MOBILE - Build Specification
-# Version: v3.1.7
+# Version: v3.1.8
 # Author: Nitrodz00s
 import os
 from PyInstaller.utils.hooks import collect_all, copy_metadata
 
-_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v3.1.7")
+_exe_basename = os.environ.get("PYINSTALLER_EXE_NAME", "NITROTOOLS_PUBG_MOBILE_v3.1.8")
 
 datas = [('assets', 'assets')]
 binaries = []
