@@ -144,16 +144,17 @@ class CheckUpdateThread(QThread):
             assets = data.get("assets", [])
 
             if latest_ver and self._is_newer_version(latest_ver, self.current_version) and assets:
-                # Prefer Setup installer, then any .exe, then .zip, skip checksums
+                # Prefer Setup installer, then any .exe, skip patch ZIPs
                 asset = next((a for a in assets if 'setup' in str(a.get('name', '')).lower()
-                              and str(a.get('name', '')).lower().endswith('.exe')), None)
+                              and str(a.get('name', '')).lower().endswith('.exe')
+                              and not str(a.get('name', '')).lower().startswith('patch_')), None)
                 if asset is None:
                     asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.exe')
-                                  and 'sha256' not in str(a.get('name', '')).lower()), None)
+                                  and 'sha256' not in str(a.get('name', '')).lower()
+                                  and not str(a.get('name', '')).lower().startswith('patch_')), None)
                 if asset is None:
-                    asset = next((a for a in assets if str(a.get('name', '')).lower().endswith('.zip')), None)
-                if asset is None:
-                    asset = next((a for a in assets if not str(a.get('name', '')).lower().endswith('.sha256')), None)
+                    asset = next((a for a in assets if not str(a.get('name', '')).lower().endswith('.sha256')
+                                  and not str(a.get('name', '')).lower().startswith('patch_')), None)
                 if asset is None:
                     self.no_update.emit()
                     return
@@ -162,7 +163,6 @@ class CheckUpdateThread(QThread):
                 size_mb = round(expected_bytes / (1024 * 1024), 2)
                 changelog = _clean_changelog(raw_changelog)
 
-                # Try to find a checksum asset (asset_name + '.sha256' or any .sha256 file)
                 expected_sha = ""
                 checksum_asset = next((a for a in assets if str(a.get('name','')).lower().endswith('.sha256')
                                         or str(a.get('name','')).lower() == str(asset.get('name','')).lower() + '.sha256'), None)
@@ -188,7 +188,39 @@ class CheckUpdateThread(QThread):
                     changelog
                 )
             else:
-                self.no_update.emit()
+                # Same version — check for patch ZIPs in current release
+                patch_log = os.path.join(
+                    os.environ.get('LOCALAPPDATA', tempfile.gettempdir()),
+                    'NitroTools', 'patches.json'
+                )
+                try:
+                    import json as _json
+                    with open(patch_log) as _f:
+                        _applied = set(_json.load(_f).get('applied', []))
+                except Exception:
+                    _applied = set()
+
+                patch_asset = next(
+                    (a for a in assets
+                     if str(a.get('name', '')).lower().startswith('patch_')
+                     and str(a.get('name', '')).lower().endswith('.zip')
+                     and str(a.get('name', '')) not in _applied),
+                    None
+                )
+                if patch_asset:
+                    expected_bytes = int(patch_asset.get('size', 0) or 0)
+                    size_kb = round(expected_bytes / 1024, 1)
+                    self.update_available.emit(
+                        latest_ver,
+                        patch_asset.get('browser_download_url', ''),
+                        patch_asset.get('name', ''),
+                        expected_bytes,
+                        f'{size_kb} KB',
+                        '',
+                        'Patch update — fixes applied automatically on restart'
+                    )
+                else:
+                    self.no_update.emit()
         except Exception:
             self.check_failed.emit()
 
