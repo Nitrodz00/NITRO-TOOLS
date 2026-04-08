@@ -41,10 +41,11 @@ Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 
 ---
 
-## 🔄 Updating from Older Versions
+## 🔄 Updating from Any Version
 1. Open the tool → click **CHECK FOR UPDATES NOW**
-2. Installer downloads and runs automatically
-3. Settings are preserved after update
+2. - **Patch update** (same version) → downloads ~20KB ZIP, applies instantly, restarts
+   - **Full upgrade** (new version) → downloads installer, runs automatically
+3. Settings are always preserved
 
 ---
 
