@@ -10,34 +10,40 @@
 
 ---
 
-## 🚀 Latest Release: v3.1.7
+## 🚀 Latest Release: v3.1.9
 
 ### 🔧 What's Fixed
-- **Shadow in Battle/Training** — Shadow now works in ALL modes (lobby + battle + training)
-- **Shortcuts** — Now works with all GameLoop versions including latest
-- **Real FPS** — Header now shows real FPS via ADB when connected (not estimated)
-- **No more DLL errors** — Installer-based distribution eliminates all DLL loading issues
+- **Shortcut name** — Desktop shortcut is now "PUBG Mobile Global" (no NITRO suffix)
+- **Shortcut launch** — GameLoop starts minimized, no AppMarket popup
+- **PUBG Global icon** — New updated icon for desktop shortcut
+- **Shadow in Battle/Training** — Works in ALL game modes
+- **Real FPS** — Header shows real FPS via ADB when connected (`~` = estimated)
+- **Shortcuts** — Compatible with all GameLoop versions
+
+### ⚡ New: Partial Update System
+From v3.1.9 onwards, small fixes are delivered as **patch ZIPs (~300KB)** — no full installer needed.  
+Just press **CHECK FOR UPDATES** and patches apply automatically in seconds.
 
 ---
 
-## � Download & Install (New Users)
+## 📥 Download & Install (New Users)
 
 ### Step 1 — Download
-**[⬇️ Download NITROTOOLS_Setup_v3.1.7.exe](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)**
+**[⬇️ Download NITROTOOLS_Setup_v3.1.9.exe](https://github.com/Nitrodz00/NITRO-TOOLS/releases/latest)**
 
 ### Step 2 — Install
 1. Right-click the installer → **Run as Administrator**
-2. Follow the setup wizard (takes ~30 seconds)
+2. Follow the setup wizard (~30 seconds)
 3. Launch **NITROTOOLS PUBG MOBILE** from the desktop shortcut
 
 ### Step 3 — Done ✅
-The tool auto-updates from inside the app — no manual downloads needed for future updates.
+Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 
 ---
 
-## 🔄 Updating from Older Versions (v3.1.6 and below)
+## 🔄 Updating from Older Versions
 1. Open the tool → click **CHECK FOR UPDATES NOW**
-2. The new installer will download and run automatically
+2. Installer downloads and runs automatically
 3. Settings are preserved after update
 
 ---
