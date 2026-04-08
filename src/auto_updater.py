@@ -5,12 +5,33 @@ Professional update system that updates the current executable in-place.
 
 import os
 import sys
+import json
+import zipfile
 import subprocess
 import tempfile
 import requests
 import hashlib
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QMessageBox, QApplication
+
+PATCH_DIR = os.path.join(os.environ.get('LOCALAPPDATA', tempfile.gettempdir()), 'NitroTools')
+PATCH_LOG = os.path.join(PATCH_DIR, 'patches.json')
+
+
+def _applied_patches():
+    try:
+        with open(PATCH_LOG, 'r') as f:
+            return set(json.load(f).get('applied', []))
+    except Exception:
+        return set()
+
+
+def _mark_patch_applied(name):
+    applied = _applied_patches()
+    applied.add(name)
+    os.makedirs(PATCH_DIR, exist_ok=True)
+    with open(PATCH_LOG, 'w') as f:
+        json.dump({'applied': list(applied)}, f)
 
 
 class UpdateCheckThread(QThread):
@@ -26,6 +47,9 @@ class UpdateCheckThread(QThread):
         self.current_version = current_version.lstrip('v')
         self.repo_api_url = repo_api_url
 
+    # patch_name, download_url
+    patch_available = pyqtSignal(str, str)
+
     def run(self):
         try:
             response = requests.get(self.repo_api_url, timeout=10)
@@ -38,7 +62,6 @@ class UpdateCheckThread(QThread):
                 self.no_update.emit()
                 return
 
-            # API may return a list (multi-release endpoint) or a single object (/latest)
             if isinstance(releases, list):
                 latest_release = releases[0]
             else:
@@ -46,28 +69,34 @@ class UpdateCheckThread(QThread):
 
             latest_version = latest_release.get('tag_name', '').lstrip('v')
 
-            if not latest_version or not self._is_newer(latest_version, self.current_version):
-                self.no_update.emit()
-                return
-
-            # Prefer .exe asset, then .zip, skip .sha256
-            asset = None
-            for ext in ('.exe', '.zip'):
-                asset = next((a for a in latest_release.get('assets', [])
-                              if str(a.get('name', '')).lower().endswith(ext)), None)
+            if latest_version and self._is_newer(latest_version, self.current_version):
+                # Full version upgrade available
+                asset = None
+                for ext in ('.exe', '.zip'):
+                    asset = next((a for a in latest_release.get('assets', [])
+                                  if str(a.get('name', '')).lower().endswith(ext)
+                                  and not str(a.get('name', '')).lower().startswith('patch_')), None)
+                    if asset:
+                        break
+                if asset is None:
+                    asset = next((a for a in latest_release.get('assets', [])
+                                  if not str(a.get('name', '')).lower().endswith('.sha256')
+                                  and not str(a.get('name', '')).lower().startswith('patch_')), None)
                 if asset:
-                    break
-            if asset is None:
-                # pick first non-sha256 asset
-                asset = next((a for a in latest_release.get('assets', [])
-                              if not str(a.get('name', '')).lower().endswith('.sha256')), None)
-            if asset is None:
-                self.no_update.emit()
-                return
+                    download_url = asset.get('browser_download_url', '')
+                    changelog = latest_release.get('body', '') or ''
+                    self.update_available.emit(latest_version, download_url, changelog)
+                    return
 
-            download_url = asset.get('browser_download_url', '')
-            changelog = latest_release.get('body', '') or ''
-            self.update_available.emit(latest_version, download_url, changelog)
+            # Same version — check for patch ZIPs in current release
+            applied = _applied_patches()
+            for asset in latest_release.get('assets', []):
+                name = str(asset.get('name', ''))
+                if name.startswith('patch_') and name.endswith('.zip') and name not in applied:
+                    self.patch_available.emit(name, asset.get('browser_download_url', ''))
+                    return
+
+            self.no_update.emit()
 
         except requests.exceptions.ConnectionError:
             self.check_failed.emit("No internet connection.")
@@ -91,15 +120,17 @@ class UpdateDownloadThread(QThread):
     completed = pyqtSignal(str)  # downloaded file path
     failed = pyqtSignal(str)
 
-    def __init__(self, download_url):
+    def __init__(self, download_url, is_patch=False):
         super().__init__()
         self.download_url = download_url
+        self.is_patch = is_patch
         self.running = True
 
     def run(self):
         try:
             temp_dir = tempfile.gettempdir()
-            download_path = os.path.join(temp_dir, "NITROTOOLS_UPDATE.exe")
+            filename = "NITROTOOLS_PATCH.zip" if self.is_patch else "NITROTOOLS_UPDATE.exe"
+            download_path = os.path.join(temp_dir, filename)
 
             response = requests.get(self.download_url, stream=True, timeout=300)
             if response.status_code != 200:
@@ -141,12 +172,13 @@ class AutoUpdateManager:
         self.repo_api_url = repo_api_url
         self._checker = None
         self._downloader = None
-        self._pending_url = None
+        self._pending_patch_name = None
 
     def check_for_updates(self):
-        """Check for updates in background."""
+        """Check for updates and patches in background."""
         self._checker = UpdateCheckThread(self.current_version, self.repo_api_url)
         self._checker.update_available.connect(self._on_update_available)
+        self._checker.patch_available.connect(self._on_patch_available)
         self._checker.no_update.connect(self._on_no_update)
         self._checker.check_failed.connect(self._on_check_failed)
         self._checker.start()
@@ -182,6 +214,34 @@ class AutoUpdateManager:
         self.parent_window.show_status_message(f"Update check failed: {error}")
 
     # -- Download --
+
+    def _on_patch_available(self, patch_name, url):
+        """A patch ZIP is available — apply silently without asking."""
+        self._pending_patch_name = patch_name
+        self.parent_window.show_status_message(f"Patch available: {patch_name} — downloading...")
+        self._downloader = UpdateDownloadThread(url, is_patch=True)
+        self._downloader.progress.connect(self._on_download_progress)
+        self._downloader.completed.connect(self._on_patch_complete)
+        self._downloader.failed.connect(self._on_download_failed)
+        self._downloader.start()
+
+    def _on_patch_complete(self, zip_path):
+        """Extract patch ZIP to NitroTools user dir and restart."""
+        try:
+            os.makedirs(PATCH_DIR, exist_ok=True)
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                zf.extractall(PATCH_DIR)
+            if self._pending_patch_name:
+                _mark_patch_applied(self._pending_patch_name)
+            self.parent_window.show_status_message("Patch applied! Restarting...")
+            QTimer.singleShot(1000, self._restart_app)
+        except Exception as e:
+            self.parent_window.show_status_message(f"Patch failed: {e}")
+
+    def _restart_app(self):
+        subprocess.Popen([sys.executable] + sys.argv,
+                         creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW)
+        QApplication.quit()
 
     def _start_download(self, url):
         self.parent_window.show_status_message("Downloading update...")

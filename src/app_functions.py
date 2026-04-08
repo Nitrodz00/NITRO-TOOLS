@@ -853,7 +853,7 @@ class Game(Optimizer):
                 self.logger.error(f"Version ID for '{game_name}' not found.")
                 return False
                 
-            path_icon = os.path.join(desktop, f"{game_name} - NITRO.lnk")
+            path_icon = os.path.join(desktop, f"{game_name}.lnk")
             
             # Enhanced target selection — ordered by GameLoop version priority
             # Newer GameLoop uses AndroidEmulatorEn.exe (64-bit); older uses AndroidEmulator.exe
@@ -920,7 +920,7 @@ class Game(Optimizer):
             shortcut.WorkingDirectory = gameloop_ui_path
             
             # Enhanced arguments for better compatibility
-            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink -vm 100"
+            shortcut.Arguments = f"-startpkg {version_id} -from DesktopLink -vm 100 -minimized"
             shortcut.Description = f"Launch {game_name} - Optimized by NITROTOOLS"
             shortcut.WindowStyle = 1  # Normal window
             
