@@ -825,11 +825,14 @@ class Game(Optimizer):
             # Get GameLoop installation path
             gameloop_ui_path = self.get_local_reg("InstallPath", path="UI")
             if not gameloop_ui_path or not os.path.exists(gameloop_ui_path):
-                # Fallback to common installation paths
+                # Fallback to common installation paths (all known GameLoop versions)
                 fallback_paths = [
                     r"C:\Program Files\TxGameAssistant\UI",
                     r"C:\Program Files (x86)\TxGameAssistant\UI",
-                    r"C:\Tencent\GameLoop\UI"
+                    r"C:\TxGameAssistant\UI",
+                    r"C:\Tencent\GameLoop\UI",
+                    r"C:\Program Files\GameLoop\UI",
+                    r"C:\GameLoop\UI",
                 ]
                 for path in fallback_paths:
                     if os.path.exists(path):
@@ -852,12 +855,15 @@ class Game(Optimizer):
                 
             path_icon = os.path.join(desktop, f"{game_name} - NITRO.lnk")
             
-            # Enhanced target selection with better fallback logic
+            # Enhanced target selection — ordered by GameLoop version priority
+            # Newer GameLoop uses AndroidEmulatorEn.exe (64-bit); older uses AndroidEmulator.exe
             targets = [
-                ("AndroidEmulatorEn.exe", "Enhanced version"),
-                ("AndroidEmulator.exe", "Standard version"),
-                ("AppMarket.exe", "App Market launcher"),
-                ("aow_exe.exe", "Alternative launcher")
+                ("AndroidEmulatorEn.exe", "GameLoop 64-bit"),
+                ("AndroidEmulator.exe",   "GameLoop 32-bit"),
+                ("aow_exe.exe",           "GameLoop AOW engine"),
+                ("AppMarket.exe",         "GameLoop AppMarket launcher"),
+                ("GameLoop.exe",          "GameLoop main launcher"),
+                ("TxGameAssistant.exe",   "TxGameAssistant launcher"),
             ]
             
             target = None
@@ -871,7 +877,19 @@ class Game(Optimizer):
                     break
             
             if not target:
-                self.logger.error("No valid GameLoop executable found for shortcut.")
+                # Last resort: search one level up from UI folder
+                parent = os.path.dirname(gameloop_ui_path)
+                for t, _ in targets:
+                    p = os.path.join(parent, t)
+                    if os.path.exists(p):
+                        target = p
+                        target_name = t
+                        gameloop_ui_path = parent
+                        self.logger.info(f"Found target in parent dir: {t}")
+                        break
+            
+            if not target:
+                self.logger.error(f"No valid GameLoop executable found in {gameloop_ui_path}")
                 return False
 
             # Handle icon copying with better error handling
@@ -1209,16 +1227,27 @@ class Game(Optimizer):
             # 1. Update Active.sav (Binary content in memory)
             # 0 = OFF, 1 = ON in Active.sav binary properties
             sav_shadow_val = b'\x01' if value == "ON" else b'\x00'
-            header = b'BattleShadow\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00'
-            
+
+            # Set ALL shadow-related properties (lobby + battle + training + art)
+            # Same approach as set_fps which sets FPSLevel, BattleFPS, LobbyFPS
+            shadow_props = [
+                "BattleShadow",
+                "LobbyShadow",
+                "ArtShadow",
+                "BattleRenderShadow",
+                "LobbyRenderShadow",
+                "TrainingShadow",
+                "TrainingRenderShadow",
+            ]
             shadow_updated = False
-            if header in self.active_sav_content:
-                before, mid, after = self.active_sav_content.partition(header)
-                # Replace the byte immediately following the header
-                after = sav_shadow_val + after[1:]
-                self.active_sav_content = before + mid + after
-                shadow_updated = True
-                self.logger.info("Updated shadow in Active.sav binary content")
+            for prop in shadow_props:
+                header = prop.encode('utf-8') + b'\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00'
+                if header in self.active_sav_content:
+                    before, mid, after = self.active_sav_content.partition(header)
+                    after = sav_shadow_val + after[1:]
+                    self.active_sav_content = before + mid + after
+                    shadow_updated = True
+                    self.logger.info(f"Updated {prop} in Active.sav to {value}")
 
             # 2. Update UserCustom.ini (Text file in user_data_dir)
             # 48 = '0' (Enable/High in some contexts), 49 = '1' (Disable/Low)
@@ -1344,6 +1373,7 @@ class Game(Optimizer):
             ]
 
             successful_pushes = 0
+            active_sav_dest = f"{data_dir}/SaveGames/Active.sav"
             for src, dest in files:
                 try:
                     # First unlock it just in case it was locked from previous run
@@ -1359,10 +1389,14 @@ class Game(Optimizer):
                     
                     # Verify the file was pushed successfully
                     if self.adb.shell(f"test -f {dest} && echo 'exists'").strip() == 'exists':
-                        # LOCK THE FILE (444 = Read only) so the game cannot reset it!
-                        self.adb.shell(f"chmod 444 {dest}")
+                        # Only lock Active.sav — UserCustom.ini must stay writable
+                        # so the game can update it when entering battle/training mode
+                        if dest == active_sav_dest:
+                            self.adb.shell(f"chmod 444 {dest}")
+                            self.logger.info(f"Pushed and locked: {dest}")
+                        else:
+                            self.logger.info(f"Pushed (writable): {dest}")
                         successful_pushes += 1
-                        self.logger.info(f"Successfully pushed and locked: {dest}")
                     else:
                         self.logger.error(f"Failed to push file to: {dest}")
                         
