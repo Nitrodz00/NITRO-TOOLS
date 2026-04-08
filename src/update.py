@@ -476,20 +476,29 @@ class UpdateWindow(QMainWindow):
             with open(patch_log, 'w') as _f:
                 json.dump(_data, _f)
 
-            self.title_label.setText("✅  Patch applied successfully")
-            self.status_label.setText("Restarting application to apply changes...")
+            self.title_label.setText("✅  Patch applied! Restarting...")
+            self.status_label.setText("The tool will reopen automatically in a moment.")
 
+            exe = sys.executable
             try:
-                subprocess.Popen([sys.executable] + sys.argv,
-                                 creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
-                                 close_fds=True)
+                bat = os.path.join(tempfile.gettempdir(), 'nitro_restart.bat')
+                with open(bat, 'w') as b:
+                    b.write('@echo off\n')
+                    b.write('timeout /t 2 /nobreak >nul\n')
+                    b.write(f'start "" "{exe}"\n')
+                    b.write('del "%~f0"\n')
+                subprocess.Popen(
+                    ['cmd', '/c', bat],
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                    close_fds=True
+                )
             except Exception:
                 try:
-                    os.startfile(sys.executable)
+                    os.startfile(exe)
                 except Exception:
                     pass
 
-            QTimer.singleShot(1200, sys.exit)
+            QTimer.singleShot(800, QApplication.quit)
         except Exception as e:
             self._on_failed(f"Patch apply failed: {e}")
 
