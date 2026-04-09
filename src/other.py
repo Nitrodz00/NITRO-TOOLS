@@ -1,5 +1,7 @@
 import ping3
-from PyQt5.QtCore import QThread, pyqtSignal, QObject
+from PyQt5.QtCore import QThread, pyqtSignal, QObject, QRect
+from PyQt5.QtWidgets import QComboBox, QLabel
+from PyQt5.QtGui import QFont
 import re
 from . import setup_logger
 
@@ -20,7 +22,9 @@ class IPADWorkerThread(QThread):
             self.invalid_dimensions.emit()
             return
         width, height = dims
-        self.app.ipad_settings(width, height)
+        mode = getattr(self.ui, 'ipad_mode_dropdown', None)
+        mode_text = mode.currentText() if mode else 'Both'
+        self.app.ipad_settings(width, height, mode=mode_text)
         self.task_completed.emit()
 
     @staticmethod
@@ -79,6 +83,37 @@ class Other(QObject):
         
         ui.shortcut_dropdown.clear()
         ui.shortcut_dropdown.addItems(self.app.pubg_versions.values())
+
+        # Repopulate ipad_dropdown with all resolutions including new ones
+        ui.ipad_dropdown.clear()
+        ui.ipad_dropdown.addItems([
+            "1920 x 1440  (4:3 - Best)",
+            "1720 x 1440  (6:5 - Wide)",
+            "1600 x 1200  (4:3 - Medium)",
+            "1440 x 1080  (4:3 - Light)",
+            "1280 x 960   (4:3 - Low-End)",
+        ])
+
+        # Add mode selector programmatically if not already present
+        if not hasattr(ui, 'ipad_mode_dropdown') or ui.ipad_mode_dropdown is None:
+            parent = ui.ipad_dropdown.parent()
+            # Mode label
+            mode_lbl = QLabel(parent)
+            mode_lbl.setText("Apply To:")
+            mode_lbl.setGeometry(QRect(540, 362, 100, 28))
+            font = QFont("Agency FB", 11, QFont.Bold)
+            mode_lbl.setFont(font)
+            mode_lbl.setStyleSheet("color: #ffffff;")
+            mode_lbl.show()
+            # Mode dropdown
+            mode_cb = QComboBox(parent)
+            mode_cb.setObjectName(u"ipad_mode_dropdown")
+            mode_cb.addItems(["Screen + Game", "Game Only", "Screen Only"])
+            mode_cb.setGeometry(QRect(650, 362, 191, 32))
+            font2 = QFont("Agency FB", 11, QFont.Bold)
+            mode_cb.setFont(font2)
+            mode_cb.show()
+            ui.ipad_mode_dropdown = mode_cb
 
         if _width is None or _height is None:
             ui.ipad_rest_btn.hide()

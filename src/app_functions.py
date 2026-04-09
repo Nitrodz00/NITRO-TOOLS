@@ -773,9 +773,28 @@ class Optimizer(Registry):
             set_keymap_layout()
 
 
-    def ipad_settings(self, width: int, height: int) -> None:
+    def change_screen_resolution(self, width: int, height: int) -> bool:
+        """
+        Change Windows display resolution using win32api.
+        """
+        try:
+            import win32api
+            import pywintypes
+            devmode = pywintypes.DEVMODEType()
+            devmode.PelsWidth = width
+            devmode.PelsHeight = height
+            devmode.Fields = 0x00080000 | 0x00100000  # DM_PELSWIDTH | DM_PELSHEIGHT
+            result = win32api.ChangeDisplaySettings(devmode, 0)
+            # 0 = DISP_CHANGE_SUCCESSFUL
+            return result == 0
+        except Exception as e:
+            self.logger.error(f"Screen resolution change failed: {e}")
+            return False
+
+    def ipad_settings(self, width: int, height: int, mode: str = 'Both') -> None:
         """
         Update iPad settings with the given width and height.
+        mode: 'Screen + Game' | 'Game Only' | 'Screen Only'
         """
         _width = self.settings.value("VMResWidth")
         _height = self.settings.value("VMResHeight")
@@ -786,9 +805,16 @@ class Optimizer(Registry):
             self.settings.setValue("VMResWidth", vm_res_width)
             self.settings.setValue("VMResHeight", vm_res_height)
 
-        self.ipad_layout_settings()
-        self.set_dword("VMResWidth", width)
-        self.set_dword("VMResHeight", height)
+        apply_game = mode in ('Screen + Game', 'Game Only', 'Both')
+        apply_screen = mode in ('Screen + Game', 'Screen Only')
+
+        if apply_game:
+            self.ipad_layout_settings()
+            self.set_dword("VMResWidth", width)
+            self.set_dword("VMResHeight", height)
+
+        if apply_screen:
+            self.change_screen_resolution(width, height)
 
     def reset_ipad(self):
         """
