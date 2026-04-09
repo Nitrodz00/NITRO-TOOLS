@@ -16,13 +16,23 @@
 - **Shortcut name** — Desktop shortcut is now "PUBG Mobile Global" (no NITRO suffix)
 - **Shortcut launch** — GameLoop starts minimized, no AppMarket popup
 - **PUBG Global icon** — New updated icon for desktop shortcut
-- **Shadow in Battle/Training** — Works in ALL game modes
+- **Shadow lock** — `chattr +i` immutable lock + `Scalability.ini` to prevent game from overwriting shadow settings
+- **Style button** — Cyan border highlight on selected style (Classic, Colorful, Realistic, Soft, Movie)
+- **GFX modes** — Style applies to Battle, Lobby, Training & Art modes
 - **Real FPS** — Header shows real FPS via ADB when connected (`~` = estimated)
-- **Shortcuts** — Compatible with all GameLoop versions
+- **FPS color** — Magenta for medium FPS, cyan for high, red for low
+- **AI Optimizer** — Pauses during GFX apply to avoid conflicts
 
-### ⚡ New: Partial Update System
-From v3.1.9 onwards, small fixes are delivered as **patch ZIPs (~300KB)** — no full installer needed.  
-Just press **CHECK FOR UPDATES** and patches apply automatically in seconds.
+### ✨ New Features (Latest Patches)
+- **iPad Resolution** — 5 presets including new **1720×1440** and **1280×960**
+- **Apply To Mode** — Choose: `Screen + Game` / `Game Only` / `Screen Only`
+- **Screen Resolution Change** — Instantly changes Windows display resolution via win32api
+- **Toolkit tab** — Renamed from "Other" for clarity
+
+### ⚡ Partial Update System
+From v3.1.9 onwards, fixes are delivered as **patch ZIPs (~160KB)** — no full installer needed.  
+Just press **CHECK FOR UPDATES** and patches apply automatically in seconds.  
+**Any new file or module** added in a patch is auto-loaded — zero maintenance required.
 
 ---
 
