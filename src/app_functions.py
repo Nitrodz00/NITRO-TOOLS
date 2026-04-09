@@ -1328,7 +1328,9 @@ class Game(Optimizer):
         }
         battle_style = battle_style_dict.get(style)
         if battle_style is not None:
-            self.change_graphics_file("BattleRenderStyle", battle_style)
+            for prop in ("BattleRenderStyle", "LobbyRenderStyle",
+                         "TrainingRenderStyle", "ArtRenderStyle"):
+                self.change_graphics_file(prop, battle_style)
 
     def set_graphics_quality(self, quality):
         """
@@ -1393,13 +1395,9 @@ class Game(Optimizer):
                     
                     # Verify the file was pushed successfully
                     if self.adb.shell(f"test -f {dest} && echo 'exists'").strip() == 'exists':
-                        # Only lock Active.sav — UserCustom.ini must stay writable
-                        # so the game can update it when entering battle/training mode
-                        if dest == active_sav_dest:
-                            self.adb.shell(f"chmod 444 {dest}")
-                            self.logger.info(f"Pushed and locked: {dest}")
-                        else:
-                            self.logger.info(f"Pushed (writable): {dest}")
+                        # Lock both files to prevent game from overwriting shadow settings
+                        self.adb.shell(f"chmod 444 {dest}")
+                        self.logger.info(f"Pushed and locked: {dest}")
                         successful_pushes += 1
                     else:
                         self.logger.error(f"Failed to push file to: {dest}")

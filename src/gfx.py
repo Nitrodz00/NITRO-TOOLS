@@ -185,7 +185,17 @@ class GFX(QObject):
         self.ui.submit_gfx_btn.setEnabled(False)
         selected_graphics = next((b.text() for b in self.graphics_buttons if b.isChecked()), None)
         selected_fps = next((b.text() for b in self.fps_buttons if b.isChecked()), None)
-        selected_style = next((b.property("styleId") for b in self.style_buttons if b.isChecked()), None)
+        _style_map = {
+            "classic_style_btn": "Classic",
+            "colorful_style_btn": "Colorful",
+            "realistic_style_btn": "Realistic",
+            "soft_style_btn": "Soft",
+            "movie_style_btn": "Movie",
+        }
+        selected_style = next(
+            (_style_map.get(b.objectName()) for b in self.style_buttons if b.isChecked()),
+            None
+        )
         selected_shadow = next((b.objectName() for b in self.shadow_buttons if b.isChecked()), None)
         resolution_checked = getattr(self.ui, 'resolution_btn', None) and self.ui.resolution_btn.isChecked()
 

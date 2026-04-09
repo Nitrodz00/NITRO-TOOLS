@@ -405,7 +405,7 @@ class Window(QtWidgets.QMainWindow, Game):
         
         # Color based on FPS quality
         if fps >= 85: color = "#00ffca"
-        elif fps >= 55: color = "#ffff00"
+        elif fps >= 55: color = "#ff66ff"
         else: color = "#ff4d4d"
         self.header_fps_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: 900; font-family: 'Agency FB';")
         self.header_cpu_label.setText(f"CPU: {int(stats['cpu_percent'])}% | {int(stats.get('cpu_temp', 0))}°C")
