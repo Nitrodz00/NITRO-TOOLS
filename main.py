@@ -55,28 +55,41 @@ setup_python_path()
 # Pre-load any patched modules from user data dir so relative imports pick them up
 def _load_user_patches():
     import importlib.util
+    import glob as _glob
     _patch_dir = os.path.join(os.getenv('LOCALAPPDATA', ''), 'NitroTools')
-    _mods = [
-        ('src.ui',             'src/ui.py'),
-        ('src.ui_functions',   'src/ui_functions.py'),
-        ('src.gfx',            'src/gfx.py'),
-        ('src.app_functions',  'src/app_functions.py'),
-        ('src.other',          'src/other.py'),
-        ('src.system',         'src/system.py'),
-        ('src.update',         'src/update.py'),
-        ('src.auto_updater',   'src/auto_updater.py'),
-        ('src.monitor',        'src/monitor.py'),
-    ]
-    for _name, _rel in _mods:
-        _path = os.path.join(_patch_dir, _rel)
+    _src_dir = os.path.join(_patch_dir, 'src')
+    if not os.path.isdir(_src_dir):
+        return
+    # Load in dependency order first, then any remaining files automatically
+    _ordered = ['ui', 'ui_functions', 'gfx', 'app_functions',
+                'other', 'system', 'update', 'auto_updater', 'monitor']
+    _loaded = set()
+    for _mod_name in _ordered:
+        _path = os.path.join(_src_dir, f'{_mod_name}.py')
         if os.path.isfile(_path):
             try:
-                _spec = importlib.util.spec_from_file_location(_name, _path)
+                _full = f'src.{_mod_name}'
+                _spec = importlib.util.spec_from_file_location(_full, _path)
                 _mod = importlib.util.module_from_spec(_spec)
-                sys.modules[_name] = _mod
+                sys.modules[_full] = _mod
                 _spec.loader.exec_module(_mod)
+                _loaded.add(_mod_name)
             except Exception:
                 pass
+    # Auto-discover any additional .py files not in the ordered list
+    for _py in _glob.glob(os.path.join(_src_dir, '*.py')):
+        _mod_name = os.path.splitext(os.path.basename(_py))[0]
+        if _mod_name in _loaded or _mod_name == '__init__':
+            continue
+        try:
+            _full = f'src.{_mod_name}'
+            if _full not in sys.modules:
+                _spec = importlib.util.spec_from_file_location(_full, _py)
+                _mod = importlib.util.module_from_spec(_spec)
+                sys.modules[_full] = _mod
+                _spec.loader.exec_module(_mod)
+        except Exception:
+            pass
 
 _load_user_patches()
 
