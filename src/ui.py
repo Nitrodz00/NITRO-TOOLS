@@ -388,8 +388,10 @@ class Ui_MainWindow(object):
                                       "                                }\n"
                                       "\n"
                                       "                                QPushButton:checked {\n"
-                                      "                                border-width: 5px; /* set the width of the border */\n"
-                                      "                                border-image: url(:/Graphics/checked.png);\n"
+                                      "                                border: 3px solid #00ffca;\n"
+                                      "                                background-color: rgba(0, 255, 202, 0.18);\n"
+                                      "                                border-radius: 8px;\n"
+                                      "                                border-image: none;\n"
                                       "                                }\n"
                                       "                            ")
         self.style_label = QLabel(self.StyleFrame)
@@ -1067,6 +1069,6 @@ class Ui_MainWindow(object):
             self.close_btn.setText(QCoreApplication.translate("MainWindow", u"X", None))
             self.minimize_btn.setText(QCoreApplication.translate("MainWindow", u"-", None))
             self.gfx_button.setText(QCoreApplication.translate("MainWindow", u"GFX", None))
-            self.other_button.setText(QCoreApplication.translate("MainWindow", u"Other", None))
+            self.other_button.setText(QCoreApplication.translate("MainWindow", u"Toolkit", None))
             self.about_button.setText(QCoreApplication.translate("MainWindow", u"About", None))
     # retranslateUi

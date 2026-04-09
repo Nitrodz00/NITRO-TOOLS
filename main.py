@@ -57,10 +57,15 @@ def _load_user_patches():
     import importlib.util
     _patch_dir = os.path.join(os.getenv('LOCALAPPDATA', ''), 'NitroTools')
     _mods = [
-        ('src.app_functions', 'src/app_functions.py'),
-        ('src.update',        'src/update.py'),
-        ('src.auto_updater',  'src/auto_updater.py'),
-        ('src.monitor',       'src/monitor.py'),
+        ('src.ui',             'src/ui.py'),
+        ('src.ui_functions',   'src/ui_functions.py'),
+        ('src.gfx',            'src/gfx.py'),
+        ('src.app_functions',  'src/app_functions.py'),
+        ('src.other',          'src/other.py'),
+        ('src.system',         'src/system.py'),
+        ('src.update',         'src/update.py'),
+        ('src.auto_updater',   'src/auto_updater.py'),
+        ('src.monitor',        'src/monitor.py'),
     ]
     for _name, _rel in _mods:
         _path = os.path.join(_patch_dir, _rel)

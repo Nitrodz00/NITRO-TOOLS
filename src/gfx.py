@@ -41,22 +41,20 @@ class SubmitWorkerThread(QThread):
             # Persist the modified Active.sav content to new.sav
             self.app.save_graphics_file()
 
-            # Push both sav and ini to device
-            push_success = self.app.push_active_shadow_file()
-            if not push_success:
-                self.status.emit("Warning: Some files failed to push, but continuing...")
+            if self.selected_shadow:
+                # Use force_shadow_disable for aggressive file push + restart
+                self.app.force_shadow_disable()
+            else:
+                # Normal push and start
+                self.app.push_active_shadow_file()
+                self.app.create_scalability_ini()
+                sleep(1)
 
-            # Create Scalability.ini to reinforce settings
-            self.app.create_scalability_ini()
-
-            # Delay to ensure files are written before game starts
-            sleep(1)
-
-            # Apply device-specific resolution tweak if requested
-            if self.app.pubg_package == "com.pubg.krmobile" and self.resolution_checked:
-                self.app.kr_fullhd()
-            elif self.app.pubg_package:
-                self.app.start_app()
+                # Apply device-specific resolution tweak if requested
+                if self.app.pubg_package == "com.pubg.krmobile" and self.resolution_checked:
+                    self.app.kr_fullhd()
+                elif self.app.pubg_package:
+                    self.app.start_app()
 
             self.task_completed.emit()
         except Exception as e:
@@ -171,7 +169,6 @@ class GFX(QObject):
         self.graphics_buttons_func()
         self.fps_buttons_func()
         self.style_buttons_func()
-        self._apply_style_checked_highlight()
 
         # UI Initialization
         self.ui.ResolutionkrFrame.hide()
@@ -383,20 +380,6 @@ class GFX(QObject):
     def check_button_selected(buttons, clicked_button):
         for button in buttons:
             button.setChecked(button is clicked_button)
-
-    def _apply_style_checked_highlight(self):
-        checked_css = """
-            QPushButton:checked {
-                border: 3px solid #00ffca !important;
-                background-color: rgba(0, 255, 202, 0.18);
-                border-radius: 8px;
-                border-image: none !important;
-            }
-        """
-        for btn in self.style_buttons:
-            old_style = btn.styleSheet()
-            new_style = old_style.replace("border-image: url(:/Graphics/checked.png);", "")
-            btn.setStyleSheet(new_style + checked_css)
 
     def gfx_buttons(self, enabled: bool):
         all_interactive = self.graphics_buttons + self.fps_buttons + self.style_buttons + self.shadow_buttons + [self.ui.submit_gfx_btn]

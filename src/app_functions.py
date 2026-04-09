@@ -1463,6 +1463,34 @@ sg.FoliageQuality=0
             self.logger.error(f"Scalability.ini creation failed: {e}")
             return False
 
+    def force_shadow_disable(self):
+        """Force disable shadows by replacing files and restarting game."""
+        try:
+            # 1. Stop game
+            self.adb.shell(f"am force-stop {self.pubg_package}")
+            sleep(2)
+
+            # 2. Push all files with locking
+            self.push_active_shadow_file()
+            self.create_scalability_ini()
+
+            # 3. Clear config cache (not account data)
+            data_dir = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved"
+            self.adb.shell(f"rm -rf {data_dir}/Config/Android/GameUserSettings.ini")
+            self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/cache/*")
+
+            # 4. Push again after clearing
+            self.push_active_shadow_file()
+            self.create_scalability_ini()
+
+            # 5. Start game with fresh activity
+            main_activity = f"{self.pubg_package}/com.epicgames.ue4.SplashActivity"
+            self.adb.shell(f"am start -n {main_activity} --activity-clear-top")
+            return True
+        except Exception as e:
+            self.logger.error(f"Force shadow disable failed: {e}")
+            return False
+
     def clear_standby_list(self):
         """
         Clears the system standby list (RAM cache) to reduce stuttering.
