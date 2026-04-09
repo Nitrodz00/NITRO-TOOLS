@@ -144,39 +144,30 @@ class Window(QtWidgets.QMainWindow, Game):
             self.raise_()
 
     def _init_perf_monitor(self):
-        # Move Monitor to Top-Right Header with elegant transparent style
+        # AI-only status bar in top-right header
         self.monitor_frame = QtWidgets.QFrame(self.ui.centralwidget)
         self.monitor_frame.setObjectName("MonitorFrame")
-        self.monitor_frame.setGeometry(QtCore.QRect(600, 10, 500, 45))
+        self.monitor_frame.setGeometry(QtCore.QRect(850, 10, 280, 45))
         self.monitor_frame.setStyleSheet("background: rgba(30, 0, 60, 0.4); border-radius: 8px;")
         
         layout = QtWidgets.QHBoxLayout(self.monitor_frame)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(15)
-        
-        self.header_fps_label = QtWidgets.QLabel("FPS: 0")
-        self.header_fps_label.setStyleSheet("color: #00ffca; font-size: 22px; font-weight: 900; font-family: 'Agency FB';")
-        
-        self.header_cpu_label = QtWidgets.QLabel("CPU: 0%")
-        self.header_cpu_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
-        
-        self.header_gpu_label = QtWidgets.QLabel("GPU: 0%")
-        self.header_gpu_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
-        
-        self.header_ram_label = QtWidgets.QLabel("RAM: 0%")
-        self.header_ram_label.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold; font-family: 'Segoe UI';")
+        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setSpacing(0)
         
         self.ai_status = QtWidgets.QLabel("[ AI STANDBY ]")
-        self.ai_status.setStyleSheet("color: #ff00ff; font-weight: 800; font-size: 10px; letter-spacing: 1px;")
+        self.ai_status.setStyleSheet("color: #ff00ff; font-weight: 800; font-size: 13px; letter-spacing: 2px;")
         
-        layout.addWidget(self.header_fps_label)
         layout.addStretch()
-        layout.addWidget(self.header_cpu_label)
-        layout.addWidget(self.header_gpu_label)
-        layout.addWidget(self.header_ram_label)
         layout.addWidget(self.ai_status)
+        layout.addStretch()
         
         self.monitor_frame.show()
+        
+        # Keep dummy references so _on_stats_updated doesn't crash
+        self.header_fps_label = None
+        self.header_cpu_label = None
+        self.header_gpu_label = None
+        self.header_ram_label = None
 
     def _fix_ui_layouts(self):
         """Fix hardcoded UI overlaps from the .ui file."""
@@ -395,31 +386,14 @@ class Window(QtWidgets.QMainWindow, Game):
         self.ui.submit_gfx_btn.setStyleSheet(action_btn_style)
 
     def _on_stats_updated(self, stats: dict):
-        """Update live dashboard stats and run AI Dynamic Optimizer."""
-        fps = int(stats['fps'])
-        fps_source = stats.get('fps_source', 'estimate')
-        fps_str = f"{fps:02d}" if fps < 100 else str(fps)
-        # ~ prefix = estimated (no ADB), no prefix = real ADB data
-        prefix = "" if fps_source == "real" else "~"
-        self.header_fps_label.setText(f"{prefix}{fps_str} FPS")
-        
-        # Color based on FPS quality
-        if fps >= 85: color = "#00ffca"
-        elif fps >= 55: color = "#ff66ff"
-        else: color = "#ff4d4d"
-        self.header_fps_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: 900; font-family: 'Agency FB';")
-        self.header_cpu_label.setText(f"CPU: {int(stats['cpu_percent'])}% | {int(stats.get('cpu_temp', 0))}°C")
-        self.header_gpu_label.setText(f"GPU: {int(stats['gpu_percent'])}% | {int(stats.get('gpu_temp', 0))}°C")
-        self.header_ram_label.setText(f"RAM: {int(stats['ram_percent'])}%")
-        
-        # Evaluate stats with AI (Part 2 - Dynamic Optimization)
+        """Run AI Dynamic Optimizer and update AI status label."""
         if self.watcher.game_running and not getattr(self, 'applying_gfx', False):
             self.ai.evaluate(stats)
-            self.ai_status.setText(f"AI: {self.ai.last_mode.upper()} Mode Active")
-            self.ai_status.setStyleSheet("color: #00ffff; font-style: italic; font-size: 11px;")
+            self.ai_status.setText(f"[ AI: {self.ai.last_mode.upper()} ]")
+            self.ai_status.setStyleSheet("color: #00ffca; font-weight: 800; font-size: 13px; letter-spacing: 2px;")
         else:
-            self.ai_status.setText("AI: Waiting for Game...")
-            self.ai_status.setStyleSheet("color: #aaaaaa; font-style: italic; font-size: 11px;")
+            self.ai_status.setText("[ AI STANDBY ]")
+            self.ai_status.setStyleSheet("color: #ff00ff; font-weight: 800; font-size: 13px; letter-spacing: 2px;")
 
     def _on_game_detected(self, running: bool):
         if running:

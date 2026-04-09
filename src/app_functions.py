@@ -1489,27 +1489,103 @@ sg.FoliageQuality=0
             self.logger.error(f"Scalability.ini creation failed: {e}")
             return False
 
-    def force_shadow_disable(self):
-        """Force disable shadows by replacing files and restarting game."""
+    def create_engine_ini(self):
+        """
+        Create Engine.ini with [SystemSettings] — highest priority in UE4.
+        SystemSettings override everything including cloud-restored user settings.
+        """
         try:
+            content = """[SystemSettings]
+r.ShadowQuality=0
+r.Shadow.MaxResolution=1
+r.Shadow.CSM.MaxCascades=0
+r.Shadow.RadiusThreshold=1.0
+r.Shadow.DistanceScale=0.0
+r.Shadow.CSM.TransitionScale=0.0
+r.LightFunctionQuality=0
+r.ContactShadows=0
+r.CapsuleShadows=0
+r.DynamicGlobalIlluminationMethod=0
+"""
+            ini_path = os.path.join(self.user_data_dir, 'Engine.ini')
+            with open(ini_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            cfg = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android"
+            dest = f"{cfg}/Engine.ini"
+            self.adb.sync.push(ini_path, dest)
+            self.adb.shell(f"chmod 444 {dest}")
+            self.adb.shell(f"chattr +i {dest} 2>/dev/null")
+            self.logger.info("Engine.ini pushed and locked")
+            return True
+        except Exception as e:
+            self.logger.error(f"Engine.ini creation failed: {e}")
+            return False
+
+    def create_game_user_settings_ini(self):
+        """
+        Create GameUserSettings.ini to set shadow quality to 0.
+        This is the settings file the game uses to restore user preferences.
+        """
+        try:
+            content = """[/Script/Engine.GameUserSettings]
+bUseVSync=False
+sg.ResolutionQuality=100
+sg.ViewDistanceQuality=2
+sg.AntiAliasingQuality=1
+sg.ShadowQuality=0
+sg.PostProcessQuality=0
+sg.TextureQuality=2
+sg.EffectsQuality=2
+sg.FoliageQuality=0
+"""
+            ini_path = os.path.join(self.user_data_dir, 'GameUserSettings.ini')
+            with open(ini_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            cfg = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android"
+            dest = f"{cfg}/GameUserSettings.ini"
+            self.adb.sync.push(ini_path, dest)
+            self.adb.shell(f"chmod 444 {dest}")
+            self.adb.shell(f"chattr +i {dest} 2>/dev/null")
+            self.logger.info("GameUserSettings.ini pushed and locked")
+            return True
+        except Exception as e:
+            self.logger.error(f"GameUserSettings.ini creation failed: {e}")
+            return False
+
+    def force_shadow_disable(self):
+        """
+        Force disable shadows using all 4 UE4 config layers:
+        1. Active.sav  (game save binary)
+        2. UserCustom.ini (custom overrides)
+        3. Scalability.ini (quality groups)
+        4. GameUserSettings.ini (user prefs — prevents cloud restore)
+        5. Engine.ini [SystemSettings] (HIGHEST priority — overrides everything)
+        """
+        try:
+            cfg = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android"
+
             # 1. Stop game
             self.adb.shell(f"am force-stop {self.pubg_package}")
             sleep(2)
 
-            # 2. Push all files with locking
-            self.push_active_shadow_file()
-            self.create_scalability_ini()
+            # 2. Unlock any previously locked files so we can overwrite
+            for f_name in ['Engine.ini', 'GameUserSettings.ini', 'Scalability.ini', 'UserCustom.ini']:
+                self.adb.shell(f"chattr -i {cfg}/{f_name} 2>/dev/null")
+                self.adb.shell(f"chmod 666 {cfg}/{f_name} 2>/dev/null")
 
-            # 3. Clear config cache (not account data)
-            data_dir = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved"
-            self.adb.shell(f"rm -rf {data_dir}/Config/Android/GameUserSettings.ini")
+            # 3. Push Active.sav (binary shadow flag)
+            self.push_active_shadow_file()
+
+            # 4. Push all 4 ini config layers
+            self.create_scalability_ini()
+            self.create_engine_ini()
+            self.create_game_user_settings_ini()
+
+            # 5. Clear game cache
             self.adb.shell(f"rm -rf /sdcard/Android/data/{self.pubg_package}/cache/*")
+            sleep(1)
 
-            # 4. Push again after clearing
-            self.push_active_shadow_file()
-            self.create_scalability_ini()
-
-            # 5. Start game with fresh activity
+            # 6. Start game with fresh activity
             main_activity = f"{self.pubg_package}/com.epicgames.ue4.SplashActivity"
             self.adb.shell(f"am start -n {main_activity} --activity-clear-top")
             return True

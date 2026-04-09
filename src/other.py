@@ -92,24 +92,30 @@ class Other(QObject):
             "1600 x 1200  (4:3 - Medium)",
             "1440 x 1080  (4:3 - Light)",
             "1280 x 960   (4:3 - Low-End)",
+            "1920 x 1080  (16:9 - Native)",
         ])
+
+        # Fix layout: widen resolution dropdown, reposition all iPad View elements
+        ui.ipad_dropdown.setGeometry(QRect(540, 448, 314, 42))
+        ui.ipad_other_btn.setGeometry(QRect(862, 448, 213, 42))
+        ui.ipad_rest_btn.setGeometry(QRect(862, 500, 213, 31))
 
         # Add mode selector programmatically if not already present
         if not hasattr(ui, 'ipad_mode_dropdown') or ui.ipad_mode_dropdown is None:
             parent = ui.ipad_dropdown.parent()
-            # Mode label
+            # "Apply To" label
             mode_lbl = QLabel(parent)
             mode_lbl.setText("Apply To:")
-            mode_lbl.setGeometry(QRect(540, 362, 100, 28))
+            mode_lbl.setGeometry(QRect(540, 402, 100, 28))
             font = QFont("Agency FB", 11, QFont.Bold)
             mode_lbl.setFont(font)
-            mode_lbl.setStyleSheet("color: #ffffff;")
+            mode_lbl.setStyleSheet("color: #00ffca;")
             mode_lbl.show()
             # Mode dropdown
             mode_cb = QComboBox(parent)
             mode_cb.setObjectName(u"ipad_mode_dropdown")
             mode_cb.addItems(["Screen + Game", "Game Only", "Screen Only"])
-            mode_cb.setGeometry(QRect(650, 362, 191, 32))
+            mode_cb.setGeometry(QRect(648, 400, 214, 32))
             font2 = QFont("Agency FB", 11, QFont.Bold)
             mode_cb.setFont(font2)
             mode_cb.show()
