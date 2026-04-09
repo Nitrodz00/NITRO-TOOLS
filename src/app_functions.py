@@ -1357,15 +1357,14 @@ class Game(Optimizer):
 
     def push_active_shadow_file(self):
         """
-        Enhanced shadow file push with better error handling and in-game effect verification.
-        Pushes the modified Active.sav & Shadow file to the device and locks them to prevent reset.
+        Enhanced shadow file push with chattr +i for immutable lock.
         """
         try:
             self.logger.info("Starting shadow file push process")
             
-            # Force stop the game to ensure files are not in use
+            # Force stop the game
             self.adb.shell(f"am force-stop {self.pubg_package}")
-            sleep(0.5)
+            sleep(1.5)
 
             data_dir = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved"
 
@@ -1382,44 +1381,86 @@ class Game(Optimizer):
             ]
 
             successful_pushes = 0
-            active_sav_dest = f"{data_dir}/SaveGames/Active.sav"
             for src, dest in files:
                 try:
-                    # First unlock it just in case it was locked from previous run
+                    # Remove any existing lock
+                    self.adb.shell(f"chattr -i {dest} 2>/dev/null")
                     self.adb.shell(f"chmod 666 {dest}")
                     
-                    # Verify source file exists
                     if not os.path.exists(src):
                         self.logger.error(f"Source file not found: {src}")
                         continue
                     
-                    # Push the file
                     self.adb.sync.push(src, dest)
+                    sleep(0.5)
                     
-                    # Verify the file was pushed successfully
-                    if self.adb.shell(f"test -f {dest} && echo 'exists'").strip() == 'exists':
-                        # Lock both files to prevent game from overwriting shadow settings
+                    # Verify push
+                    if self.adb.shell(f"test -f {dest} && echo exists").strip() == 'exists':
                         self.adb.shell(f"chmod 444 {dest}")
-                        self.logger.info(f"Pushed and locked: {dest}")
+                        chattr_result = self.adb.shell(f"chattr +i {dest} 2>&1")
+                        if "Operation not permitted" not in chattr_result:
+                            self.logger.info(f"Immutable lock set on {dest}")
+                        else:
+                            self.logger.warning(f"chattr +i failed (non-critical): {chattr_result}")
+                        
+                        self.logger.info(f"Successfully pushed and locked: {dest}")
                         successful_pushes += 1
                     else:
-                        self.logger.error(f"Failed to push file to: {dest}")
+                        self.logger.error(f"Push verification failed for {dest}")
                         
                 except Exception as e:
-                    self.logger.error(f"Error pushing file {src} to {dest}: {e}")
+                    self.logger.error(f"Error pushing {src}: {e}")
                     continue
 
-            # Clear game cache to ensure settings take effect
+            # Clear game cache
             try:
                 self.adb.shell("rm -rf /sdcard/Android/data/*/cache/*")
                 self.logger.info("Cleared game cache")
             except Exception as e:
-                self.logger.warning(f"Failed to clear cache: {e}")
+                self.logger.warning(f"Cache clear failed: {e}")
 
+            sleep(1)
             return successful_pushes == len(files)
             
         except Exception as e:
             self.logger.error(f"Critical error in push_active_shadow_file: {e}")
+            return False
+
+    def create_scalability_ini(self):
+        """Create Scalability.ini to enforce shadow and quality settings."""
+        try:
+            content = """[ShadowQuality]
+sg.ShadowQuality=0
+r.ShadowQuality=0
+r.Shadow.MaxResolution=4
+r.Shadow.CSM.MaxCascades=0
+
+[PostProcessQuality]
+r.PostProcessAAQuality=0
+r.Tonemapper.GrainQuantization=0
+
+[ScalabilityGroups]
+sg.ResolutionQuality=100
+sg.ViewDistanceQuality=2
+sg.AntiAliasingQuality=1
+sg.ShadowQuality=0
+sg.PostProcessQuality=0
+sg.TextureQuality=2
+sg.EffectsQuality=2
+sg.FoliageQuality=0
+"""
+            ini_path = os.path.join(self.user_data_dir, 'Scalability.ini')
+            with open(ini_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            dest = f"/sdcard/Android/data/{self.pubg_package}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/Scalability.ini"
+            self.adb.sync.push(ini_path, dest)
+            self.adb.shell(f"chmod 444 {dest}")
+            self.adb.shell(f"chattr +i {dest} 2>/dev/null")
+            self.logger.info("Scalability.ini pushed and locked")
+            return True
+        except Exception as e:
+            self.logger.error(f"Scalability.ini creation failed: {e}")
             return False
 
     def clear_standby_list(self):

@@ -413,7 +413,7 @@ class Window(QtWidgets.QMainWindow, Game):
         self.header_ram_label.setText(f"RAM: {int(stats['ram_percent'])}%")
         
         # Evaluate stats with AI (Part 2 - Dynamic Optimization)
-        if self.watcher.game_running:
+        if self.watcher.game_running and not getattr(self, 'applying_gfx', False):
             self.ai.evaluate(stats)
             self.ai_status.setText(f"AI: {self.ai.last_mode.upper()} Mode Active")
             self.ai_status.setStyleSheet("color: #00ffff; font-style: italic; font-size: 11px;")

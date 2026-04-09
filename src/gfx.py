@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
+from time import sleep
 import os
 import sys
 import json
@@ -40,8 +41,16 @@ class SubmitWorkerThread(QThread):
             # Persist the modified Active.sav content to new.sav
             self.app.save_graphics_file()
 
-            # Push both sav and ini to device to ensure effect
-            self.app.push_active_shadow_file()
+            # Push both sav and ini to device
+            push_success = self.app.push_active_shadow_file()
+            if not push_success:
+                self.status.emit("Warning: Some files failed to push, but continuing...")
+
+            # Create Scalability.ini to reinforce settings
+            self.app.create_scalability_ini()
+
+            # Delay to ensure files are written before game starts
+            sleep(1)
 
             # Apply device-specific resolution tweak if requested
             if self.app.pubg_package == "com.pubg.krmobile" and self.resolution_checked:
@@ -184,6 +193,7 @@ class GFX(QObject):
     def gfx_submit_button_click(self):
         # Collect current selections on the main thread (safe) and pass to worker
         self.ui.submit_gfx_btn.setEnabled(False)
+        self.app.applying_gfx = True
         selected_graphics = next((b.text() for b in self.graphics_buttons if b.isChecked()), None)
         selected_fps = next((b.text() for b in self.fps_buttons if b.isChecked()), None)
         _style_map = {
@@ -208,9 +218,13 @@ class GFX(QObject):
             selected_shadow=selected_shadow,
             resolution_checked=resolution_checked
         )
-        self.worker_submit.task_completed.connect(self.submit_gfx_done)
+        self.worker_submit.task_completed.connect(self._on_submit_done)
         self.worker_submit.status.connect(lambda msg, dur=5: self.app.show_status_message(msg, dur))
         self.worker_submit.start()
+
+    def _on_submit_done(self):
+        self.app.applying_gfx = False
+        self.submit_gfx_done()
 
     def save_profile(self):
         # Determine selections using objectName for image-based buttons
@@ -373,13 +387,16 @@ class GFX(QObject):
     def _apply_style_checked_highlight(self):
         checked_css = """
             QPushButton:checked {
-                border: 3px solid #00ffca;
+                border: 3px solid #00ffca !important;
                 background-color: rgba(0, 255, 202, 0.18);
                 border-radius: 8px;
+                border-image: none !important;
             }
         """
         for btn in self.style_buttons:
-            btn.setStyleSheet(btn.styleSheet() + checked_css)
+            old_style = btn.styleSheet()
+            new_style = old_style.replace("border-image: url(:/Graphics/checked.png);", "")
+            btn.setStyleSheet(new_style + checked_css)
 
     def gfx_buttons(self, enabled: bool):
         all_interactive = self.graphics_buttons + self.fps_buttons + self.style_buttons + self.shadow_buttons + [self.ui.submit_gfx_btn]
