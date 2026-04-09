@@ -1330,7 +1330,10 @@ class Game(Optimizer):
         if battle_style is not None:
             for prop in ("BattleRenderStyle", "LobbyRenderStyle",
                          "TrainingRenderStyle", "ArtRenderStyle"):
-                self.change_graphics_file(prop, battle_style)
+                header = (prop.encode('utf-8') +
+                          b'\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00')
+                if header in self.active_sav_content:
+                    self.change_graphics_file(prop, battle_style)
 
     def set_graphics_quality(self, quality):
         """
@@ -1412,14 +1415,6 @@ class Game(Optimizer):
                 self.logger.info("Cleared game cache")
             except Exception as e:
                 self.logger.warning(f"Failed to clear cache: {e}")
-
-            # Restart the game to apply changes
-            sleep(1)
-            try:
-                self.adb.shell(f"monkey -p {self.pubg_package} -c android.intent.category.LAUNCHER 1")
-                self.logger.info("Restarted game to apply shadow changes")
-            except Exception as e:
-                self.logger.warning(f"Failed to restart game: {e}")
 
             return successful_pushes == len(files)
             

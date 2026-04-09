@@ -162,6 +162,7 @@ class GFX(QObject):
         self.graphics_buttons_func()
         self.fps_buttons_func()
         self.style_buttons_func()
+        self._apply_style_checked_highlight()
 
         # UI Initialization
         self.ui.ResolutionkrFrame.hide()
@@ -368,6 +369,17 @@ class GFX(QObject):
     def check_button_selected(buttons, clicked_button):
         for button in buttons:
             button.setChecked(button is clicked_button)
+
+    def _apply_style_checked_highlight(self):
+        checked_css = """
+            QPushButton:checked {
+                border: 3px solid #00ffca;
+                background-color: rgba(0, 255, 202, 0.18);
+                border-radius: 8px;
+            }
+        """
+        for btn in self.style_buttons:
+            btn.setStyleSheet(btn.styleSheet() + checked_css)
 
     def gfx_buttons(self, enabled: bool):
         all_interactive = self.graphics_buttons + self.fps_buttons + self.style_buttons + self.shadow_buttons + [self.ui.submit_gfx_btn]
