@@ -809,7 +809,9 @@ class Optimizer(Registry):
         apply_screen = mode in ('Screen + Game', 'Screen Only')
 
         if apply_game:
-            self.ipad_layout_settings()
+            # Only update the emulator resolution registry — do NOT call ipad_layout_settings()
+            # as it modifies TVM_100.xml keymap coordinates and breaks button mapping
+            # for non-4:3 resolutions and custom aspect ratios
             self.set_dword("VMResWidth", width)
             self.set_dword("VMResHeight", height)
 
