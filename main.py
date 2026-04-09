@@ -60,9 +60,10 @@ def _load_user_patches():
     _src_dir = os.path.join(_patch_dir, 'src')
     if not os.path.isdir(_src_dir):
         return
-    # Load in dependency order first, then any remaining files automatically
-    _ordered = ['ui', 'ui_functions', 'gfx', 'app_functions',
-                'other', 'system', 'update', 'auto_updater', 'monitor']
+    # Load in dependency order: ui_functions MUST be last — it imports from all others.
+    # If ui_functions loads before other/gfx/app_functions, it gets the frozen version of those modules.
+    _ordered = ['ui', 'app_functions', 'other', 'system', 'gfx',
+                'update', 'auto_updater', 'monitor', 'ui_functions']
     _loaded = set()
     for _mod_name in _ordered:
         _path = os.path.join(_src_dir, f'{_mod_name}.py')
