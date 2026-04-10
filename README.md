@@ -51,6 +51,21 @@ Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 
 ---
 
+## 🎬 Quick Start Video Tutorial
+
+Watch this 60-second guide to maximize your performance:
+
+**[▶️ Watch Setup Guide](VIDEO_GUIDE.md)**
+
+### TL;DR — 3 Steps to Victory:
+1. **TOOLKIT** → Click `COMPETITIVE MODE (MAX)`
+2. **SYSTEM** → Click `ONE-CLICK AI OPTIMIZER`  
+3. Enable `AUTO-BOOST` before every match — leave tool running in background
+
+**Enjoy smooth, lag-free gaming!** ❤️✨
+
+---
+
 ## 🔄 Updating from Any Version
 1. Open the tool → click **CHECK FOR UPDATES NOW**
 2. - **Patch update** (same version) → downloads ~20KB ZIP, applies instantly, restarts
