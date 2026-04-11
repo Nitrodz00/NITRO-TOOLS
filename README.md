@@ -51,18 +51,13 @@ Future updates apply automatically — press **CHECK FOR UPDATES** anytime.
 
 ---
 
-## 🎬 Quick Start Video Tutorial
+## ⚡ Quick Start
 
-Watch this 60-second guide to maximize your performance:
+1. **TOOLKIT** → `COMPETITIVE MODE (MAX)`
+2. **SYSTEM** → `ONE-CLICK AI OPTIMIZER`
+3. Enable `AUTO-BOOST` — keep running in background
 
-**[▶️ Watch Setup Guide](VIDEO_GUIDE.md)**
-
-### TL;DR — 3 Steps to Victory:
-1. **TOOLKIT** → Click `COMPETITIVE MODE (MAX)`
-2. **SYSTEM** → Click `ONE-CLICK AI OPTIMIZER`  
-3. Enable `AUTO-BOOST` before every match — leave tool running in background
-
-**Enjoy smooth, lag-free gaming!** ❤️✨
+🎮 **Done! Enjoy smooth lag-free gaming.**
 
 ---
 
