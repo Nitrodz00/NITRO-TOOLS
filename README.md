@@ -164,7 +164,7 @@ Build EXE locally:
 
 ## 📬 Contact
 
-- **Discrod:** (https://discord.gg/4bvrf3sM)
+- **Discrod:** https://discord.gg/6QpCWeAbyC
 - **GitHub:** [Nitrodz00](https://github.com/Nitrodz00)
 - **Repository:** [NITRO-TOOLS](https://github.com/Nitrodz00/NITRO-TOOLS)
 
